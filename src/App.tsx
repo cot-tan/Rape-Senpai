@@ -205,8 +205,12 @@ function App() {
         const screenHeight = window.innerHeight;
         const minDimension = Math.min(screenWidth, screenHeight);
         
-        // ブロックサイズを画面の短い方の辺の1/4に設定
-        const calculatedBlockSize = Math.floor(minDimension / 4);
+        // デスクトップ環境での最大幅を632pxに制限
+        const maxDesktopWidth = isDesktop ? 632 : screenWidth;
+        const calculatedWidth = Math.min(minDimension, maxDesktopWidth);
+        
+        // ブロックサイズを画面幅の1/4に設定
+        const calculatedBlockSize = Math.floor(calculatedWidth / 4);
         setBlockSize(calculatedBlockSize);
         
         // ゲーム領域の高さを設定
@@ -1040,24 +1044,6 @@ function App() {
         initSetting();
     };
 
-    const showSetting = () => {
-        const settingElement = document.getElementById('setting');
-        const btnGroup = document.getElementById('btn_group');
-        if (settingElement && btnGroup) {
-            settingElement.style.display = 'block';
-            btnGroup.style.display = 'none';
-        }
-    };
-
-    const showBtnGroup = () => {
-        const settingElement = document.getElementById('setting');
-        const btnGroup = document.getElementById('btn_group');
-        if (settingElement && btnGroup) {
-            settingElement.style.display = 'none';
-            btnGroup.style.display = 'block';
-        }
-    };
-
     const changeMode = (newMode: GameMode) => {
         setMode(newMode);
         cookie('gameMode', 
@@ -1450,45 +1436,21 @@ function App() {
                 <div className="welcome-bg FILL"></div>
                 <div className="FILL BOX-M" style={{"position": "absolute", "top":0,"left":0,"right":0,"bottom":0,"zIndex":5}}>
                     <div className="container">
-                        <div className="container mb-5">
-                            <div style={{"fontSize":"2.6em", "color":"#FEF002"}}>{I18N['game-title']}</div>
-                            <br />
-                            <div id="desc" style={{"display": "block","fontSize":"2.2em", "color":"#fff", "lineHeight":"1.5em"}}>
-                                <span>{I18N['game-intro1']}</span><br />
-                                <span>{I18N['game-intro2']}</span><br />
-                                <span>{I18N['game-intro3']}</span><br />
+                        <div style={{"fontSize":"2.6em", "color":"#FEF002"}}>{I18N['game-title']}</div>
+                        <div id="setting" className="container">
+                            <div className="modemenu">
+                                <a className="btn" onClick={() => changeMode("NORMAL")} style={mode === "NORMAL" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['normal']}</a>
+                                <a className="btn" onClick={() => changeMode("ENDLESS")} style={mode === "ENDLESS" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['endless']}</a>
+                                <a className="btn" onClick={() => changeMode("PRACTICE")} style={mode === "PRACTICE" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['practice']}</a>
                             </div>
-                            <br />
-                            <div style={{"fontSize":"1em", "color":"#fff","lineHeight":"1.5em"}}>
-                                <span>{I18N['hint-keyboard-support']}</span><br />
-                                <span>{I18N['hint-pointer-support']}</span><br />
-                            </div>
-                        </div>
-                        <div id="btn_group" className="container text-nowrap">
-                            <div className="d-flex justify-content-center flex-column flex-fill mx-auto px-2">
-                                <a className="btn btn-primary btn-lg mb-3" onClick={() => readyBtn()}>{I18N['start']}</a>
-                                <div className="dropdown mb-3">
-                                    <a className="w-100 btn btn-secondary btn-lg" href="javascript: void(0);" role="button" id="mode" data-bs-toggle="dropdown" aria-expanded="false">{modeToString(mode)}</a>
-                                    <ul className="dropdown-menu" aria-labelledby="mode">
-                                        <li><a className="dropdown-item" onClick={() => changeMode("NORMAL")}>{I18N['normal']}</a></li>
-                                        <li><a className="dropdown-item" onClick={() => changeMode("ENDLESS")}>{I18N['endless']}</a></li>
-                                        <li><a className="dropdown-item" onClick={() => changeMode("PRACTICE")}>{I18N['practice']}</a></li>
-                                    </ul>
-                                </div>
-                                <a className="btn btn-secondary btn-lg" onClick={showSetting}>{I18N['settings']}</a>
-                            </div>
-                        </div>
-                        <div id="setting" className="container" style={{"display": "none"}}>
-                            <div className="container mb-3 btn-group">
-                                <a id="sound" type="button" className="btn text-nowrap btn-secondary" onClick={() => changeSoundMode()}></a>
-                            </div>
-                            <div className="input-group mb-3">
+                            <button id="sound" type="button" className="btn text-nowrap btn-secondary" onClick={() => changeSoundMode()}></button>
+                            <div className="input-group">
                                 <div className="input-group-prepend col-2">
                                     <span className="input-group-text">{I18N['key']}</span>
                                 </div>
                                 <input type="text" id="keyboard" className="form-control" maxLength={4} placeholder={I18N['default-dfjk']}/>
                             </div>
-                            <div className="input-group mb-3">
+                            <div className="input-group">
                                 <div className="input-group-prepend col-2">
                                     <span className="input-group-text">{I18N['time']}</span>
                                 </div>
@@ -1502,7 +1464,7 @@ function App() {
                                     onChange={handleGameTimeChange}
                                 />
                             </div>
-                            <div className="input-group mb-3">
+                            <div className="input-group">
                                 <div className="input-group-prepend col-2">
                                     <span className="input-group-text">クリック前画像</span>
                                 </div>
@@ -1521,7 +1483,7 @@ function App() {
                                     リセット
                                 </button>
                             </div>
-                            <div className="input-group mb-3">
+                            <div className="input-group">
                                 <div className="input-group-prepend col-2">
                                     <span className="input-group-text">クリック後画像</span>
                                 </div>
@@ -1540,7 +1502,7 @@ function App() {
                                     リセット
                                 </button>
                             </div>
-                            <div className="input-group mb-3">
+                            <div className="input-group">
                                 <div className="input-group-prepend col-2">
                                     <span className="input-group-text">タップ音</span>
                                 </div>
@@ -1559,7 +1521,7 @@ function App() {
                                     リセット
                                 </button>
                             </div>
-                            <div className="input-group mb-3">
+                            <div className="input-group">
                                 <div className="input-group-prepend col-2">
                                     <span className="input-group-text">エラー音</span>
                                 </div>
@@ -1578,7 +1540,7 @@ function App() {
                                     リセット
                                 </button>
                             </div>
-                            <div className="input-group mb-3">
+                            <div className="input-group">
                                 <div className="input-group-prepend col-2">
                                     <span className="input-group-text">終了音</span>
                                 </div>
@@ -1597,10 +1559,11 @@ function App() {
                                     リセット
                                 </button>
                             </div>
-                            <button type="button" className="btn btn-secondary btn-lg" onClick={() => {
+                            <a className="btn btn-primary btn-lg mb-3" onClick={() => {
                                 saveCookie();
-                                showBtnGroup();
-                            }}>{I18N['ok']}</button>
+                                readyBtn()
+                            }}>{I18N['start']}</a>
+
                         </div>
                     </div>
                 </div>
