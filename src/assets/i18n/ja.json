@@ -31,5 +31,7 @@
   "text-level-4": "ヌゥン！ヘッ！ヘッ！ ア゛ア゛ア゛ア゛ァ",
   "text-level-5": "あーもうめちゃくちゃだよ",
   "time-over": "タイムオーバー",
-  "sound-type-error": "音声ファイルを選択してください"
+  "sound-type-error": "音声ファイルを選択してください",
+  "error-occurred": "エラーが発生しました",
+  "retry": "リトライ"
 }

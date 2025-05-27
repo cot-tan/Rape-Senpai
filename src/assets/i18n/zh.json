@@ -31,5 +31,7 @@
   "text-level-4": "哼哼哼啊啊啊啊啊",
   "text-level-5": "都撅爛了罷（惱",
   "time-over": "倒數秒數多了",
-  "sound-type-error": "請選擇音頻文件"
+  "sound-type-error": "請選擇音頻文件",
+  "error-occurred": "發生錯誤",
+  "retry": "重試"
 }

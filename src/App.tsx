@@ -151,10 +151,14 @@ function App() {
     });
 
     const [lastTapTime, setLastTapTime] = useState(0);
-    const TAP_THRESHOLD = 50; // 200msから50msに短縮
+    const TAP_THRESHOLD = 8; // 16msから8msに短縮（120FPS対応）
+    const TAP_MOVE_THRESHOLD = 30; // タッチ移動の許容範囲をさらに広げる
+    const TAP_TIME_THRESHOLD = 500; // タップの最大許容時間を延長
 
-    const [touchStartPos, setTouchStartPos] = useState<{ x: number, y: number } | null>(null);
-    const TAP_MOVE_THRESHOLD = 10; // タッチ移動の許容範囲（ピクセル）
+    const [touchStartPos, setTouchStartPos] = useState<{ x: number, y: number, time: number, target: BlockElement } | null>(null);
+
+    const [isInitialized, setIsInitialized] = useState(false);
+    const [isError, setIsError] = useState(false);
 
     const getI18nText = (key: I18nKey): string => {
         return I18N[key] || key;
@@ -537,19 +541,131 @@ function App() {
         }
     }
 
+    // タッチ処理を即座に実行するための関数
+    const processTouchImmediately = (x: number, y: number, target: BlockElement) => {
+        const currentTime = Date.now();
+        const timeSinceLastTap = currentTime - lastTapTime;
+        
+        if (timeSinceLastTap < TAP_THRESHOLD) {
+            return false;
+        }
+        
+        setLastTapTime(currentTime);
+
+        if (isGameOver) {
+            return false;
+        }
+
+        const p = gameBBList[gameBBListIndex];
+        if (!p || !target) return false;
+
+        if (y > touchArea[0] || y < touchArea[1]) {
+            return false;
+        }
+
+        const blockX = x - (x % blockSize);
+        const blockIndex = Math.floor(blockX / blockSize);
+        
+        // ブロックの判定を緩和
+        const tolerance = blockSize * 0.15; // 許容範囲を15%に増加
+        const isWithinBlock = (index: number) => {
+            const blockStart = index * blockSize - tolerance;
+            const blockEnd = (index + 1) * blockSize + tolerance;
+            return x >= blockStart && x < blockEnd;
+        };
+
+        const isCorrectBlock = (p.id === target.id && target.notEmpty) || 
+            (p.cell === blockIndex && isWithinBlock(blockIndex));
+
+        if (isCorrectBlock) {
+            if (!isGameStart) {
+                gameStart();
+            }
+
+            const targetElement = document.getElementById(p.id) as BlockElement;
+            if (targetElement) {
+                targetElement.className = targetElement.className.replace(_ttreg, ' tt$1');
+                playSound('tap');
+                
+                // 即座に状態を更新
+                setGameBBlistIndex(prev => prev + 1);
+                setGameScore(prev => prev + 1);
+                setScore(prev => prev + 1);
+                
+                // アニメーションのみを遅延
+                requestAnimationFrame(() => {
+                    updatePanel();
+                    gameLayerMoveNextRow();
+                });
+            }
+            return true;
+        } else if (isGameStart && !target.notEmpty) {
+            playSound('err');
+            target.classList.add('bad');
+            if (mode !== "PRACTICE") {
+                const currentCPS = calculateCurrentCPS();
+                setCPS(currentCPS);
+                
+                if (mode === "NORMAL" && gameTimeNum <= 0) {
+                    return false;
+                }
+                setTimeout(() => {
+                    gameOver(currentCPS);
+                }, 500);
+            } else {
+                setTimeout(() => {
+                    target.classList.remove('bad');
+                }, 500);
+            }
+        }
+        return false;
+    };
+
     const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
         e.preventDefault();
+        e.stopPropagation();
+        
         const touch = e.touches[0];
         const rect = bodyRef.current?.getBoundingClientRect();
         if (!rect) return;
 
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
-        setTouchStartPos({ x, y });
+        const target = e.target as BlockElement;
+        
+        // タッチ開始時に即座に処理を試みる
+        const processed = processTouchImmediately(x, y, target);
+        if (!processed) {
+            setTouchStartPos({ x, y, time: Date.now(), target });
+        }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (!touchStartPos) return;
+
+        const touch = e.touches[0];
+        const rect = bodyRef.current?.getBoundingClientRect();
+        if (!rect) return;
+
+        const currentX = touch.clientX - rect.left;
+        const currentY = touch.clientY - rect.top;
+        
+        const moveX = Math.abs(currentX - touchStartPos.x);
+        const moveY = Math.abs(currentY - touchStartPos.y);
+
+        // 移動が大きい場合はタッチをキャンセル
+        if (moveX > TAP_MOVE_THRESHOLD || moveY > TAP_MOVE_THRESHOLD) {
+            setTouchStartPos(null);
+        }
     };
 
     const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
         e.preventDefault();
+        e.stopPropagation();
+        
         if (!touchStartPos) return;
 
         const touch = e.changedTouches[0];
@@ -558,21 +674,30 @@ function App() {
 
         const endX = touch.clientX - rect.left;
         const endY = touch.clientY - rect.top;
+        const endTime = Date.now();
 
-        // タッチ開始位置と終了位置の差を計算
-        const moveX = Math.abs(endX - touchStartPos.x);
-        const moveY = Math.abs(endY - touchStartPos.y);
+        if (endTime - touchStartPos.time <= TAP_TIME_THRESHOLD) {
+            const moveX = Math.abs(endX - touchStartPos.x);
+            const moveY = Math.abs(endY - touchStartPos.y);
 
-        // 移動距離が閾値以内の場合のみタップとして処理
-        if (moveX <= TAP_MOVE_THRESHOLD && moveY <= TAP_MOVE_THRESHOLD) {
-            handleGameTap(endX, endY, e.target as BlockElement);
+            if (moveX <= TAP_MOVE_THRESHOLD && moveY <= TAP_MOVE_THRESHOLD) {
+                processTouchImmediately(endX, endY, touchStartPos.target);
+            }
         }
 
         setTouchStartPos(null);
     };
 
+    const handleTouchCancel = (e: React.TouchEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setTouchStartPos(null);
+    };
+
     const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
         e.preventDefault();
+        e.stopPropagation();
+        
         const rect = bodyRef.current?.getBoundingClientRect();
         if (!rect) return;
 
@@ -583,10 +708,19 @@ function App() {
 
     const handleGameTap = (x: number, y: number, target: BlockElement) => {
         const currentTime = Date.now();
-        if (currentTime - lastTapTime < TAP_THRESHOLD) {
+        const timeSinceLastTap = currentTime - lastTapTime;
+        
+        // 前回のタップからの時間が短すぎる場合は無視
+        if (timeSinceLastTap < TAP_THRESHOLD) {
             return false;
         }
-        setLastTapTime(currentTime);
+        
+        // 前回のタップから長すぎる場合はリセット
+        if (timeSinceLastTap > 1000) {
+            setLastTapTime(0);
+        } else {
+            setLastTapTime(currentTime);
+        }
 
         if (isGameOver) {
             return false;
@@ -595,38 +729,44 @@ function App() {
         const p = gameBBList[gameBBListIndex];
         if (!p || !target) return false;
 
-        // タッチエリアの判定を厳密化
         if (y > touchArea[0] || y < touchArea[1]) {
             return false;
         }
 
-        // ブロックの位置判定を厳密化
         const blockX = x - (x % blockSize);
         const blockIndex = Math.floor(blockX / blockSize);
+        
+        // ブロックの境界付近の判定を緩和
+        const tolerance = blockSize * 0.1; // 10%の許容範囲
+        const isWithinBlock = (index: number) => {
+            const blockStart = index * blockSize - tolerance;
+            const blockEnd = (index + 1) * blockSize + tolerance;
+            return x >= blockStart && x < blockEnd;
+        };
 
         const isCorrectBlock = (p.id === target.id && target.notEmpty) || 
-            (p.cell === blockIndex && x >= blockIndex * blockSize && x < (blockIndex + 1) * blockSize);
+            (p.cell === blockIndex && isWithinBlock(blockIndex));
 
         if (isCorrectBlock) {
             if (!isGameStart) {
                 gameStart();
             }
-            
-            playSound('tap');
 
             const targetElement = document.getElementById(p.id) as BlockElement;
             if (targetElement) {
                 targetElement.className = targetElement.className.replace(_ttreg, ' tt$1');
+                
+                // アニメーションフレームで状態更新をスケジュール
+                requestAnimationFrame(() => {
+                    playSound('tap');
+                    setGameBBlistIndex(prev => prev + 1);
+                    setGameScore(prev => prev + 1);
+                    setScore(prev => prev + 1);
+                    
+                    updatePanel();
+                    gameLayerMoveNextRow();
+                });
             }
-
-            setGameBBlistIndex(prev => prev + 1);
-            setGameScore(prev => prev + 1);
-            setScore(prev => prev + 1);
-
-            requestAnimationFrame(() => {
-                updatePanel();
-                gameLayerMoveNextRow();
-            });
         } else if (isGameStart && !target.notEmpty) {
             playSound('err');
             target.classList.add('bad');
@@ -787,7 +927,7 @@ function App() {
     }
 
     const replayBtn = () => {
-        gameRestart();
+        safeGameRestart();
         setShown(false)
     }
 
@@ -1155,211 +1295,333 @@ function App() {
         return mode === "ENDLESS" ? score.toFixed(2) : score.toString();
     }
 
-  return (
-    <div id="gameBody">
-        <style>{clickBeforeStyle}</style>
-        <style>{clickAfterStyle}</style>
-        <div id="GameScoreLayer" className="BBOX SHADE" style={isShown ? {} : {"display": "none"}}>
-            <div style={{"padding":"5%","marginTop": "200px","backgroundColor": "rgba(125, 181, 216, 0.3)"}}>
-                <div id="GameScoreLayer-text">{shareText(cps)}</div>
-                <div id="GameScoreLayer-CPS" className="mb-2 d-flex flex-row justify-content-center text-start">
-                    <div className="col-3">CPS</div>
-                    <div className="col-2" id="cps">{cps.toFixed(2)}</div>
+    // エラー回復用の関数
+    const recoverFromError = () => {
+        setIsError(false);
+        gameRestart();
+    };
+
+    // 初期化処理を安全に行う関数
+    const safeInitialize = () => {
+        try {
+            if (!bodyRef.current) return;
+            
+            // 初期化順序を制御
+            const initSteps = [
+                () => {
+                    // ゲームレイヤーの初期化
+                    const [layer1, layer2] = gameLayerRefs.current;
+                    if (layer1 && layer2) {
+                        refreshGameLayer(layer1);
+                        refreshGameLayer(layer2, 1);
+                    }
+                },
+                () => {
+                    // ブロックサイズの計算
+                    countBlockSize();
+                },
+                () => {
+                    // 設定の初期化
+                    initSetting();
+                }
+            ];
+
+            // 各初期化ステップを実行
+            initSteps.forEach(step => {
+                try {
+                    step();
+                } catch (error) {
+                    console.error('Initialization step failed:', error);
+                    throw error;
+                }
+            });
+
+            setIsInitialized(true);
+        } catch (error) {
+            console.error('Initialization failed:', error);
+            setIsError(true);
+        }
+    };
+
+    // ゲーム再起動処理を安全に行う関数
+    const safeGameRestart = () => {
+        try {
+            setGameBBList([]);
+            setGameBBlistIndex(0);
+            setGameScore(0);
+            setScore(0);
+            setGameOver(false);
+            setIsGameStart(false);
+            setCPS(0);
+            
+            if (mode === "NORMAL") {
+                setGameTimeNum(gameSettingNum);
+                setDate1(undefined);
+            } else if (mode === "ENDLESS") {
+                setGameStartTime(0);
+                setGameStartDatetime(0);
+            }
+            
+            // レイヤーの再初期化
+            const [layer1, layer2] = gameLayerRefs.current;
+            if (layer1 && layer2) {
+                refreshGameLayer(layer1);
+                refreshGameLayer(layer2, 1);
+            } else {
+                throw new Error('Game layers not initialized');
+            }
+            
+            countBlockSize();
+            updatePanel();
+        } catch (error) {
+            console.error('Game restart failed:', error);
+            setIsError(true);
+        }
+    };
+
+    // エラー状態の監視
+    useEffect(() => {
+        if (isError) {
+            const timer = setTimeout(() => {
+                recoverFromError();
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [isError]);
+
+    return (
+        <div id="gameBody">
+            {isError ? (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    zIndex: 9999
+                }}>
+                    <div style={{marginBottom: '20px'}}>
+                        {I18N['error-occurred']}
+                    </div>
+                    <button 
+                        className="btn btn-secondary btn-lg"
+                        onClick={recoverFromError}
+                    >
+                        {I18N['retry']}
+                    </button>
                 </div>
-                <div id="GameScoreLayer-score" className="mb-2 d-flex flex-row justify-content-center text-start" style={{'display': mode === "ENDLESS" ? 'none' : ''}}>
-                    <div className="col-3">{I18N['score']}</div>
-                    <div className="col-2" id="score">{scoreToString(score)}</div>
-                </div>
-                <div id="GameScoreLayer-best" className="mb-2 d-flex flex-row justify-content-center text-start">
-                    <div className="col-3">{I18N['best']}</div>
-                    <div className="col-2" id="best">
-                        {(() => {
-                            const bestScores = getBestScore(score, cps);
-                            return mode === "ENDLESS" ? 
-                                bestScores.cps.toFixed(2) : 
-                                scoreToString(bestScores.score);
-                        })()}
+            ) : null}
+            <style>{clickBeforeStyle}</style>
+            <style>{clickAfterStyle}</style>
+            <div id="GameScoreLayer" className="BBOX SHADE" style={isShown ? {} : {"display": "none"}}>
+                <div style={{"padding":"5%","marginTop": "200px","backgroundColor": "rgba(125, 181, 216, 0.3)"}}>
+                    <div id="GameScoreLayer-text">{shareText(cps)}</div>
+                    <div id="GameScoreLayer-CPS" className="mb-2 d-flex flex-row justify-content-center text-start">
+                        <div className="col-3">CPS</div>
+                        <div className="col-2" id="cps">{cps.toFixed(2)}</div>
                     </div>
-                </div>
-                <button type="button" className="btn btn-secondary btn-lg" id="replay" onClick={replayBtn}>{I18N['again']}</button>
-                <button type="button" className="btn btn-secondary btn-lg" onClick={() => window.location.reload()}>{I18N['home']}</button>
-                <button type="button" className="btn btn-secondary btn-lg" onClick={() => window.location.href='https://github.com/konnokai/Rape-Senpai'}>{I18N['repo']}</button>
-            </div>
-        </div>
-        <div id="welcome" className="SHADE BOX-M" style={{"display": welcomeLayerClosed? "none" :"block"}}>
-            <div className="welcome-bg FILL"></div>
-            <div className="FILL BOX-M" style={{"position": "absolute", "top":0,"left":0,"right":0,"bottom":0,"zIndex":5}}>
-                <div className="container">
-                    <div className="container mb-5">
-                        <div style={{"fontSize":"2.6em", "color":"#FEF002"}}>{I18N['game-title']}</div>
-                        <br />
-                        <div id="desc" style={{"display": "block","fontSize":"2.2em", "color":"#fff", "lineHeight":"1.5em"}}>
-                            <span>{I18N['game-intro1']}</span><br />
-                            <span>{I18N['game-intro2']}</span><br />
-                            <span>{I18N['game-intro3']}</span><br />
-                        </div>
-                        <br />
-                        <div style={{"fontSize":"1em", "color":"#fff","lineHeight":"1.5em"}}>
-                            <span>{I18N['hint-keyboard-support']}</span><br />
-                            <span>{I18N['hint-pointer-support']}</span><br />
+                    <div id="GameScoreLayer-score" className="mb-2 d-flex flex-row justify-content-center text-start" style={{'display': mode === "ENDLESS" ? 'none' : ''}}>
+                        <div className="col-3">{I18N['score']}</div>
+                        <div className="col-2" id="score">{scoreToString(score)}</div>
+                    </div>
+                    <div id="GameScoreLayer-best" className="mb-2 d-flex flex-row justify-content-center text-start">
+                        <div className="col-3">{I18N['best']}</div>
+                        <div className="col-2" id="best">
+                            {(() => {
+                                const bestScores = getBestScore(score, cps);
+                                return mode === "ENDLESS" ? 
+                                    bestScores.cps.toFixed(2) : 
+                                    scoreToString(bestScores.score);
+                            })()}
                         </div>
                     </div>
-                    <div id="btn_group" className="container text-nowrap">
-                        <div className="d-flex justify-content-center flex-column flex-fill mx-auto px-2">
-                            <a className="btn btn-primary btn-lg mb-3" onClick={() => readyBtn()}>{I18N['start']}</a>
-                            <div className="dropdown mb-3">
-                                <a className="w-100 btn btn-secondary btn-lg" href="javascript: void(0);" role="button" id="mode" data-bs-toggle="dropdown" aria-expanded="false">{modeToString(mode)}</a>
-                                <ul className="dropdown-menu" aria-labelledby="mode">
-                                    <li><a className="dropdown-item" onClick={() => changeMode("NORMAL")}>{I18N['normal']}</a></li>
-                                    <li><a className="dropdown-item" onClick={() => changeMode("ENDLESS")}>{I18N['endless']}</a></li>
-                                    <li><a className="dropdown-item" onClick={() => changeMode("PRACTICE")}>{I18N['practice']}</a></li>
-                                </ul>
-                            </div>
-                            <a className="btn btn-secondary btn-lg" onClick={showSetting}>{I18N['settings']}</a>
-                        </div>
-                    </div>
-                    <div id="setting" className="container" style={{"display": "none"}}>
-                        <div className="container mb-3 btn-group">
-                            <a id="sound" type="button" className="btn text-nowrap btn-secondary" onClick={() => changeSoundMode()}></a>
-                        </div>
-                        <div className="input-group mb-3">
-                            <div className="input-group-prepend col-2">
-                                <span className="input-group-text">{I18N['key']}</span>
-                            </div>
-                            <input type="text" id="keyboard" className="form-control" maxLength={4} placeholder={I18N['default-dfjk']}/>
-                        </div>
-                        <div className="input-group mb-3">
-                            <div className="input-group-prepend col-2">
-                                <span className="input-group-text">{I18N['time']}</span>
-                            </div>
-                            <input 
-                                type="text" 
-                                id="gameTime" 
-                                className="form-control" 
-                                maxLength={4} 
-                                placeholder={I18N['default-20s']} 
-                                value={gameSettingNum}
-                                onChange={handleGameTimeChange}
-                            />
-                        </div>
-                        <div className="input-group mb-3">
-                            <div className="input-group-prepend col-2">
-                                <span className="input-group-text">クリック前画像</span>
-                            </div>
-                            <input
-                                type="file"
-                                id="click-before-image"
-                                className="form-control"
-                                accept="image/*"
-                                onChange={handleClickBeforeImage}
-                            />
-                            <button 
-                                className="btn btn-outline-secondary" 
-                                type="button"
-                                onClick={resetClickBeforeImage}
-                            >
-                                リセット
-                            </button>
-                        </div>
-                        <div className="input-group mb-3">
-                            <div className="input-group-prepend col-2">
-                                <span className="input-group-text">クリック後画像</span>
-                            </div>
-                            <input
-                                type="file"
-                                id="click-after-image"
-                                className="form-control"
-                                accept="image/*"
-                                onChange={handleClickAfterImage}
-                            />
-                            <button 
-                                className="btn btn-outline-secondary" 
-                                type="button"
-                                onClick={resetClickAfterImage}
-                            >
-                                リセット
-                            </button>
-                        </div>
-                        <div className="input-group mb-3">
-                            <div className="input-group-prepend col-2">
-                                <span className="input-group-text">タップ音</span>
-                            </div>
-                            <input
-                                type="file"
-                                id="tap-sound"
-                                className="form-control"
-                                accept="audio/*"
-                                onChange={(e) => handleSoundUpload(e, 'tap')}
-                            />
-                            <button 
-                                className="btn btn-outline-secondary" 
-                                type="button"
-                                onClick={() => resetSound('tap')}
-                            >
-                                リセット
-                            </button>
-                        </div>
-                        <div className="input-group mb-3">
-                            <div className="input-group-prepend col-2">
-                                <span className="input-group-text">エラー音</span>
-                            </div>
-                            <input
-                                type="file"
-                                id="err-sound"
-                                className="form-control"
-                                accept="audio/*"
-                                onChange={(e) => handleSoundUpload(e, 'err')}
-                            />
-                            <button 
-                                className="btn btn-outline-secondary" 
-                                type="button"
-                                onClick={() => resetSound('err')}
-                            >
-                                リセット
-                            </button>
-                        </div>
-                        <div className="input-group mb-3">
-                            <div className="input-group-prepend col-2">
-                                <span className="input-group-text">終了音</span>
-                            </div>
-                            <input
-                                type="file"
-                                id="end-sound"
-                                className="form-control"
-                                accept="audio/*"
-                                onChange={(e) => handleSoundUpload(e, 'end')}
-                            />
-                            <button 
-                                className="btn btn-outline-secondary" 
-                                type="button"
-                                onClick={() => resetSound('end')}
-                            >
-                                リセット
-                            </button>
-                        </div>
-                        <button type="button" className="btn btn-secondary btn-lg" onClick={() => {
-                            saveCookie();
-                            showBtnGroup();
-                        }}>{I18N['ok']}</button>
-                    </div>
+                    <button type="button" className="btn btn-secondary btn-lg" id="replay" onClick={replayBtn}>{I18N['again']}</button>
+                    <button type="button" className="btn btn-secondary btn-lg" onClick={() => window.location.reload()}>{I18N['home']}</button>
+                    <button type="button" className="btn btn-secondary btn-lg" onClick={() => window.location.href='https://github.com/konnokai/Rape-Senpai'}>{I18N['repo']}</button>
                 </div>
             </div>
+            <div id="welcome" className="SHADE BOX-M" style={{"display": welcomeLayerClosed? "none" :"block"}}>
+                <div className="welcome-bg FILL"></div>
+                <div className="FILL BOX-M" style={{"position": "absolute", "top":0,"left":0,"right":0,"bottom":0,"zIndex":5}}>
+                    <div className="container">
+                        <div className="container mb-5">
+                            <div style={{"fontSize":"2.6em", "color":"#FEF002"}}>{I18N['game-title']}</div>
+                            <br />
+                            <div id="desc" style={{"display": "block","fontSize":"2.2em", "color":"#fff", "lineHeight":"1.5em"}}>
+                                <span>{I18N['game-intro1']}</span><br />
+                                <span>{I18N['game-intro2']}</span><br />
+                                <span>{I18N['game-intro3']}</span><br />
+                            </div>
+                            <br />
+                            <div style={{"fontSize":"1em", "color":"#fff","lineHeight":"1.5em"}}>
+                                <span>{I18N['hint-keyboard-support']}</span><br />
+                                <span>{I18N['hint-pointer-support']}</span><br />
+                            </div>
+                        </div>
+                        <div id="btn_group" className="container text-nowrap">
+                            <div className="d-flex justify-content-center flex-column flex-fill mx-auto px-2">
+                                <a className="btn btn-primary btn-lg mb-3" onClick={() => readyBtn()}>{I18N['start']}</a>
+                                <div className="dropdown mb-3">
+                                    <a className="w-100 btn btn-secondary btn-lg" href="javascript: void(0);" role="button" id="mode" data-bs-toggle="dropdown" aria-expanded="false">{modeToString(mode)}</a>
+                                    <ul className="dropdown-menu" aria-labelledby="mode">
+                                        <li><a className="dropdown-item" onClick={() => changeMode("NORMAL")}>{I18N['normal']}</a></li>
+                                        <li><a className="dropdown-item" onClick={() => changeMode("ENDLESS")}>{I18N['endless']}</a></li>
+                                        <li><a className="dropdown-item" onClick={() => changeMode("PRACTICE")}>{I18N['practice']}</a></li>
+                                    </ul>
+                                </div>
+                                <a className="btn btn-secondary btn-lg" onClick={showSetting}>{I18N['settings']}</a>
+                            </div>
+                        </div>
+                        <div id="setting" className="container" style={{"display": "none"}}>
+                            <div className="container mb-3 btn-group">
+                                <a id="sound" type="button" className="btn text-nowrap btn-secondary" onClick={() => changeSoundMode()}></a>
+                            </div>
+                            <div className="input-group mb-3">
+                                <div className="input-group-prepend col-2">
+                                    <span className="input-group-text">{I18N['key']}</span>
+                                </div>
+                                <input type="text" id="keyboard" className="form-control" maxLength={4} placeholder={I18N['default-dfjk']}/>
+                            </div>
+                            <div className="input-group mb-3">
+                                <div className="input-group-prepend col-2">
+                                    <span className="input-group-text">{I18N['time']}</span>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    id="gameTime" 
+                                    className="form-control" 
+                                    maxLength={4} 
+                                    placeholder={I18N['default-20s']} 
+                                    value={gameSettingNum}
+                                    onChange={handleGameTimeChange}
+                                />
+                            </div>
+                            <div className="input-group mb-3">
+                                <div className="input-group-prepend col-2">
+                                    <span className="input-group-text">クリック前画像</span>
+                                </div>
+                                <input
+                                    type="file"
+                                    id="click-before-image"
+                                    className="form-control"
+                                    accept="image/*"
+                                    onChange={handleClickBeforeImage}
+                                />
+                                <button 
+                                    className="btn btn-outline-secondary" 
+                                    type="button"
+                                    onClick={resetClickBeforeImage}
+                                >
+                                    リセット
+                                </button>
+                            </div>
+                            <div className="input-group mb-3">
+                                <div className="input-group-prepend col-2">
+                                    <span className="input-group-text">クリック後画像</span>
+                                </div>
+                                <input
+                                    type="file"
+                                    id="click-after-image"
+                                    className="form-control"
+                                    accept="image/*"
+                                    onChange={handleClickAfterImage}
+                                />
+                                <button 
+                                    className="btn btn-outline-secondary" 
+                                    type="button"
+                                    onClick={resetClickAfterImage}
+                                >
+                                    リセット
+                                </button>
+                            </div>
+                            <div className="input-group mb-3">
+                                <div className="input-group-prepend col-2">
+                                    <span className="input-group-text">タップ音</span>
+                                </div>
+                                <input
+                                    type="file"
+                                    id="tap-sound"
+                                    className="form-control"
+                                    accept="audio/*"
+                                    onChange={(e) => handleSoundUpload(e, 'tap')}
+                                />
+                                <button 
+                                    className="btn btn-outline-secondary" 
+                                    type="button"
+                                    onClick={() => resetSound('tap')}
+                                >
+                                    リセット
+                                </button>
+                            </div>
+                            <div className="input-group mb-3">
+                                <div className="input-group-prepend col-2">
+                                    <span className="input-group-text">エラー音</span>
+                                </div>
+                                <input
+                                    type="file"
+                                    id="err-sound"
+                                    className="form-control"
+                                    accept="audio/*"
+                                    onChange={(e) => handleSoundUpload(e, 'err')}
+                                />
+                                <button 
+                                    className="btn btn-outline-secondary" 
+                                    type="button"
+                                    onClick={() => resetSound('err')}
+                                >
+                                    リセット
+                                </button>
+                            </div>
+                            <div className="input-group mb-3">
+                                <div className="input-group-prepend col-2">
+                                    <span className="input-group-text">終了音</span>
+                                </div>
+                                <input
+                                    type="file"
+                                    id="end-sound"
+                                    className="form-control"
+                                    accept="audio/*"
+                                    onChange={(e) => handleSoundUpload(e, 'end')}
+                                />
+                                <button 
+                                    className="btn btn-outline-secondary" 
+                                    type="button"
+                                    onClick={() => resetSound('end')}
+                                >
+                                    リセット
+                                </button>
+                            </div>
+                            <button type="button" className="btn btn-secondary btn-lg" onClick={() => {
+                                saveCookie();
+                                showBtnGroup();
+                            }}>{I18N['ok']}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div 
+                id="GameLayerBG"
+                ref={gameLayerBGRef}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onTouchCancel={handleTouchCancel}
+                onMouseDown={handleMouseDown}
+            >
+                <GameLayer id={1} gameLayerRefs={gameLayerRefs} />
+                <GameLayer id={2} gameLayerRefs={gameLayerRefs} />
+            </div>
+            <div id="GameTimeLayer" ref={gameTimeLayerRef} className="text-center">
+                {gameTimeText}
+            </div>
         </div>
-        <div 
-            id="GameLayerBG"
-            ref={gameLayerBGRef}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            onMouseDown={handleMouseDown}
-        >
-            <GameLayer id={1} gameLayerRefs={gameLayerRefs} />
-            <GameLayer id={2} gameLayerRefs={gameLayerRefs} />
-        </div>
-        <div id="GameTimeLayer" ref={gameTimeLayerRef} className="text-center">
-            {gameTimeText}
-        </div>
-    </div>
-  )
+    )
 }
 
 export default App
