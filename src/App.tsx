@@ -150,6 +150,12 @@ function App() {
         );
     });
 
+    const [lastTapTime, setLastTapTime] = useState(0);
+    const TAP_THRESHOLD = 50; // 200msから50msに短縮
+
+    const [touchStartPos, setTouchStartPos] = useState<{ x: number, y: number } | null>(null);
+    const TAP_MOVE_THRESHOLD = 10; // タッチ移動の許容範囲（ピクセル）
+
     const getI18nText = (key: I18nKey): string => {
         return I18N[key] || key;
     };
@@ -189,12 +195,32 @@ function App() {
 
     const countBlockSize = () => {
         if (!bodyRef.current) return;
-        setBlockSize(bodyRef.current.offsetWidth / 4);
-        bodyRef.current.style.height = window.innerHeight + 'px';
+        
+        // 画面の短い方の辺を基準にする
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        const minDimension = Math.min(screenWidth, screenHeight);
+        
+        // ブロックサイズを画面の短い方の辺の1/4に設定
+        const calculatedBlockSize = Math.floor(minDimension / 4);
+        setBlockSize(calculatedBlockSize);
+        
+        // ゲーム領域の高さを設定
+        const gameHeight = screenHeight;
+        bodyRef.current.style.height = `${gameHeight}px`;
+        
         if (gameLayerBGRef.current) {
-            gameLayerBGRef.current.style.height = window.innerHeight + 'px';
+            gameLayerBGRef.current.style.height = `${gameHeight}px`;
+            // 横幅も設定
+            gameLayerBGRef.current.style.width = `${calculatedBlockSize * 4}px`;
+            // 中央寄せ
+            gameLayerBGRef.current.style.left = `${(screenWidth - calculatedBlockSize * 4) / 2}px`;
         }
-        setTouchArea([window.innerHeight, window.innerHeight - blockSize * 3]);
+        
+        // タッチエリアを調整
+        const touchAreaTop = gameHeight;
+        const touchAreaBottom = gameHeight - calculatedBlockSize * 3;
+        setTouchArea([touchAreaTop, touchAreaBottom]);
     }
 
     const updatePanel = () => {
@@ -511,56 +537,75 @@ function App() {
         }
     }
 
-    const handleGameTapEvent = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
-        console.log(`[${mode}] Game Event:`, {
-            isGameOver,
-            isGameStart,
-            gameScore,
-            gameTimeNum: mode === "NORMAL" ? gameTimeNum : undefined,
-            cps: mode === "ENDLESS" ? getCPS() : undefined
-        });
+    const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = bodyRef.current?.getBoundingClientRect();
+        if (!rect) return;
+
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        setTouchStartPos({ x, y });
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        if (!touchStartPos) return;
+
+        const touch = e.changedTouches[0];
+        const rect = bodyRef.current?.getBoundingClientRect();
+        if (!rect) return;
+
+        const endX = touch.clientX - rect.left;
+        const endY = touch.clientY - rect.top;
+
+        // タッチ開始位置と終了位置の差を計算
+        const moveX = Math.abs(endX - touchStartPos.x);
+        const moveY = Math.abs(endY - touchStartPos.y);
+
+        // 移動距離が閾値以内の場合のみタップとして処理
+        if (moveX <= TAP_MOVE_THRESHOLD && moveY <= TAP_MOVE_THRESHOLD) {
+            handleGameTap(endX, endY, e.target as BlockElement);
+        }
+
+        setTouchStartPos(null);
+    };
+
+    const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        const rect = bodyRef.current?.getBoundingClientRect();
+        if (!rect) return;
+
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        handleGameTap(x, y, e.target as BlockElement);
+    };
+
+    const handleGameTap = (x: number, y: number, target: BlockElement) => {
+        const currentTime = Date.now();
+        if (currentTime - lastTapTime < TAP_THRESHOLD) {
+            return false;
+        }
+        setLastTapTime(currentTime);
 
         if (isGameOver) {
             return false;
         }
 
-        const target = e.target as BlockElement;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const offsetLeft = bodyRef.current?.offsetLeft || 0;
-        const x = clientX - offsetLeft;
         const p = gameBBList[gameBBListIndex];
-
-        console.log("Debug values:", {
-            target: target?.id,
-            targetNotEmpty: target?.notEmpty,
-            p,
-            x,
-            blockSize,
-            gameBBListIndex,
-            gameBBList: gameBBList
-        });
-
         if (!p || !target) return false;
 
-        if (clientY > touchArea[0] || clientY < touchArea[1]) {
-            console.log("Touch area check failed:", { clientY, touchArea });
+        // タッチエリアの判定を厳密化
+        if (y > touchArea[0] || y < touchArea[1]) {
             return false;
         }
 
-        const isCorrectBlock = (p.id === target.id && target.notEmpty) || 
-            (p.cell === 0 && x < blockSize) || 
-            (p.cell === 1 && x > blockSize && x < 2 * blockSize) || 
-            (p.cell === 2 && x > 2 * blockSize && x < 3 * blockSize) || 
-            (p.cell === 3 && x > 3 * blockSize);
+        // ブロックの位置判定を厳密化
+        const blockX = x - (x % blockSize);
+        const blockIndex = Math.floor(blockX / blockSize);
 
-        console.log("Block check:", {
-            "p.id === target.id": p.id === target.id,
-            "target.notEmpty": target.notEmpty,
-            "p.cell": p.cell,
-            "x position check": `x=${x}, blockSize=${blockSize}`,
-            isCorrectBlock
-        });
+        const isCorrectBlock = (p.id === target.id && target.notEmpty) || 
+            (p.cell === blockIndex && x >= blockIndex * blockSize && x < (blockIndex + 1) * blockSize);
 
         if (isCorrectBlock) {
             if (!isGameStart) {
@@ -573,21 +618,22 @@ function App() {
             if (targetElement) {
                 targetElement.className = targetElement.className.replace(_ttreg, ' tt$1');
             }
+
             setGameBBlistIndex(prev => prev + 1);
             setGameScore(prev => prev + 1);
             setScore(prev => prev + 1);
 
-            updatePanel();
-            gameLayerMoveNextRow();
+            requestAnimationFrame(() => {
+                updatePanel();
+                gameLayerMoveNextRow();
+            });
         } else if (isGameStart && !target.notEmpty) {
             playSound('err');
             target.classList.add('bad');
             if (mode !== "PRACTICE") {
-                // 誤タップ時のCPSを計算して保存
                 const currentCPS = calculateCurrentCPS();
                 setCPS(currentCPS);
                 
-                // ノーマルモードでタイムアップの場合はゲームオーバーにしない
                 if (mode === "NORMAL" && gameTimeNum <= 0) {
                     return false;
                 }
@@ -1302,8 +1348,9 @@ function App() {
         <div 
             id="GameLayerBG"
             ref={gameLayerBGRef}
-            onTouchStart={handleGameTapEvent}
-            onMouseDown={handleGameTapEvent}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onMouseDown={handleMouseDown}
         >
             <GameLayer id={1} gameLayerRefs={gameLayerRefs} />
             <GameLayer id={2} gameLayerRefs={gameLayerRefs} />
