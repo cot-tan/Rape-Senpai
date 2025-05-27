@@ -1437,13 +1437,12 @@ function App() {
                 <div className="FILL BOX-M" style={{"position": "absolute", "top":0,"left":0,"right":0,"bottom":0,"zIndex":5}}>
                     <div className="container">
                         <div style={{"fontSize":"2.6em", "color":"#FEF002"}}>{I18N['game-title']}</div>
-                        <div id="setting" className="container">
                             <div className="modemenu">
                                 <a className="btn" onClick={() => changeMode("NORMAL")} style={mode === "NORMAL" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['normal']}</a>
                                 <a className="btn" onClick={() => changeMode("ENDLESS")} style={mode === "ENDLESS" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['endless']}</a>
                                 <a className="btn" onClick={() => changeMode("PRACTICE")} style={mode === "PRACTICE" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['practice']}</a>
                             </div>
-                            <button id="sound" type="button" className="btn text-nowrap btn-secondary" onClick={() => changeSoundMode()}></button>
+                            <a id="sound" type="button" className="btn text-nowrap btn-secondary" onClick={() => changeSoundMode()}></a>
                             <div className="input-group">
                                 <div className="input-group-prepend col-2">
                                     <span className="input-group-text">{I18N['key']}</span>
@@ -1564,7 +1563,6 @@ function App() {
                                 readyBtn()
                             }}>{I18N['start']}</a>
 
-                        </div>
                     </div>
                 </div>
             </div>
