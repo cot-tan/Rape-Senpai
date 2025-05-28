@@ -73,6 +73,13 @@ body {
     right: 0;
     bottom: 0;
     overflow-y: scroll;
+    padding: 12em 0;
+}
+
+.column {
+    display: flex;
+    padding: 1em;
+    gap: 1em;
 }
 
 
@@ -217,7 +224,7 @@ body {
 
 /* ウェルカム画面 */
 #welcome {
-    background-color: rgba(0, 0, 0, .8);
+    background-color: rgba(0, 0, 0, .64);
     text-align: center;
     font-weight: bold;
     overflow: hidden;
@@ -566,6 +573,10 @@ body {
     .input-group.file {
         margin-bottom: 0.8em;
     }
+
+    .column {
+        flex-direction: column;
+    }
 }
 
 @media (max-width: 480px) {
@@ -641,10 +652,10 @@ body {
     --bg-color: #ffffff;
     --border-color: #8fb8c9;
     --text-shadow-color: #000;
-    --score-bg-color: rgba(255, 255, 255, 0.98);
+    --score-bg-color: rgba(255, 255, 255, 0.64);
     --score-text-color: #1a1a1a;
     --score-border-color: rgba(143, 184, 201, 0.5);
-    --blur-bg-color: rgba(255, 255, 255, 0.95);
+    --blur-bg-color: rgba(255, 255, 255, 0.72);
     --text-color: #1a1a1a;
     --input-bg-color: #ffffff;
     --input-border-color: #8fb8c9;
@@ -663,10 +674,10 @@ body {
         --bg-color: #2c2c2c;
         --border-color: #4a4a4a;
         --text-shadow-color: #000;
-        --score-bg-color: rgba(0, 0, 0, 0.98);
+        --score-bg-color: rgba(0, 0, 0, 0.64);
         --score-text-color: #ffffff;
         --score-border-color: rgba(255, 255, 255, 0.2);
-        --blur-bg-color: rgba(44, 44, 44, 0.95);
+        --blur-bg-color: rgba(44, 44, 44, 0.72);
         --text-color: #e0e0e0;
         --input-bg-color: #3a3a3a;
         --input-border-color: #555555;
@@ -793,7 +804,7 @@ body {
 }
 
 .form-control[type=number] {
-    -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 @media (max-width: 768px) {

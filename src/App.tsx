@@ -98,7 +98,8 @@ function App() {
     });
     const [isGameOver, setGameOver] = useState(false)
     const [isGameStart, setIsGameStart] = useState(false)
-    const [gameSettingNum, setGameSettingNum] = useState(20)
+    const [isClickable, setClickable] = useState(false)
+    const [gameSettingNum, setGameSettingNum] = useState(0)
     const [gameBBList, setGameBBList] = useState<GameBlock[]>([])
     const [gameBBListIndex, setGameBBlistIndex] = useState(0)
     const [gameStartTime, setGameStartTime] = useState(0);
@@ -109,18 +110,15 @@ function App() {
     const bodyRef = useRef<HTMLElement | null>(null);
     const [blockSize, setBlockSize] = useState(0)
     const gameLayerRefs = useRef<GameLayerElement[]>([])
-    const [gameLayerBG, setGameLayerBG] = useState<HTMLElement | null>(null)
     const [touchArea, setTouchArea] = useState<number[]>([])
 
 
-    const [transform, setTransform] = useState<string>("")
-    const [transitionDuration, setTransitionDuration] = useState()
+    const [_transform, setTransform] = useState<string>("")
     const [welcomeLayerClosed, setWelcomeLayerClosed] = useState(false)
-    const [gameTime, setGameTime] = useState()
     const [gameTimeNum, setGameTimeNum] = useState(gameSettingNum)
     const [gameScore, setGameScore] = useState(1)
     const [date1, setDate1] = useState<Date>()
-    const [deviationTime, setDeviationTime] = useState(0)
+    const [deviationTime, _setDeviationTime] = useState(0)
 
     const [gameTimeText, setGameTimeText] = useState<string>('');
     const gameTimeLayerRef = useRef<HTMLDivElement>(null);
@@ -128,18 +126,16 @@ function App() {
     const gameLayerBGRef = useRef<HTMLDivElement>(null);
     const gameTimeIntervalRef = useRef<number | null>(null);
     const refreshSizeTimeRef = useRef<number | null>(null);
+    const gameScoreRef = useRef<number | null>(null)
+    const date1Ref = useRef<Date | undefined>(undefined)
 
     const [map, setMap] = useState<{[key: string]: number}>({'d': 1, 'f': 2, 'j': 3, 'k': 4});
     const isDesktop = !navigator.userAgent.match(/(ipad|iphone|ipod|android|windows phone)/i);
 
-    const [sounds, setSounds] = useState<{[key: string]: HTMLAudioElement}>({});
-
-    const [refreshSizeTime, setRefreshSizeTime] = useState<number>();
-
     const [clickBeforeStyle, setClickBeforeStyle] = useState<string>('');
     const [clickAfterStyle, setClickAfterStyle] = useState<string>('');
 
-    const [customSounds, setCustomSounds] = useState<{[key: string]: string}>(() => {
+    const [_customSounds, setCustomSounds] = useState<{[key: string]: string}>(() => {
         const saved = {
             tap: localStorage.getItem('customSound_tap') || '',
             err: localStorage.getItem('customSound_err') || '',
@@ -157,7 +153,6 @@ function App() {
 
     const [touchStartPos, setTouchStartPos] = useState<{ x: number, y: number, time: number, target: BlockElement } | null>(null);
 
-    const [isInitialized, setIsInitialized] = useState(false);
     const [isError, setIsError] = useState(false);
 
     const getI18nText = (key: I18nKey): string => {
@@ -232,6 +227,7 @@ function App() {
     }
 
     const updatePanel = () => {
+        setClickable(true)
         let newText = '';
         if (mode === "NORMAL") {
             if (!isGameOver) {
@@ -294,10 +290,6 @@ function App() {
         }
         
         updatePanel();
-    }
-
-    const getMode = () => {
-        return cookie('gameMode') ? parseInt(cookie('gameMode')) : "NORMAL";
     }
 
     const shareText = (cps: number) => {
@@ -472,7 +464,6 @@ function App() {
         
         // ブロックの更新を一括で準備
         const blockUpdates = children.map((r, j) => {
-            const rstyle = r.style;
             const left = (j % 4) * blockSize;
             const bottom = Math.floor(j / 4) * blockSize;
             const isTarget = i === j;
@@ -604,6 +595,7 @@ function App() {
             }
             return true;
         } else if (isGameStart && !target.notEmpty) {
+            setClickable(false)
             playSound('err');
             target.classList.add('bad');
             if (mode !== "PRACTICE") {
@@ -711,6 +703,7 @@ function App() {
     };
 
     const handleGameTap = (x: number, y: number, target: BlockElement) => {
+        if(!isClickable) return false
         const currentTime = Date.now();
         const timeSinceLastTap = currentTime - lastTapTime;
         
@@ -750,7 +743,11 @@ function App() {
 
         const isCorrectBlock = (p.id === target.id && target.notEmpty) || 
             (p.cell === blockIndex && isWithinBlock(blockIndex));
-
+        
+        console.log("[processTouch]", {
+            isCorrectBlock,
+            isGameOver
+        })
         if (isCorrectBlock) {
             if (!isGameStart) {
                 gameStart();
@@ -772,6 +769,7 @@ function App() {
                 });
             }
         } else if (isGameStart && !target.notEmpty) {
+            setClickable(false)
             playSound('err');
             target.classList.add('bad');
             if (mode !== "PRACTICE") {
@@ -798,9 +796,14 @@ function App() {
             if (!gameStartDatetime || !gameScore) return 0;
             const timeDiff = (new Date().getTime() - gameStartDatetime) / 1000;
             return timeDiff > 0 ? gameScore / timeDiff : 0;
-        } else if (mode === "NORMAL" && date1) {
-            const timeDiff = (new Date().getTime() - date1.getTime()) / 1000;
-            return timeDiff > 0 ? gameScore / timeDiff : 0;
+        } else if (mode === "NORMAL" && (date1 || date1Ref)) {
+            const currentScore = (score === gameScoreRef.current) ? score : gameScoreRef.current
+            console.log(`[calculateCurrentCPS]:`, {
+                currentScore,
+                date1Ref
+            })
+            const timeDiff = (new Date().getTime() - date1Ref.current.getTime()) / 1000;
+            return (timeDiff > 0) && currentScore ? currentScore / timeDiff : 0;
         }
         return 0;
     };
@@ -897,6 +900,12 @@ function App() {
                 });
                 
                 if (newTimeNum <= 0 && !isGameOver) {
+                    console.log(`[NORMAL] Time Over:`, {
+                        gameScore,
+                        gameScoreRef,
+                        gameTimeNum,
+                        date1Ref
+                    })
                     // タイマーをクリアしてからゲームオーバー処理を行う
                     if (gameTimeIntervalRef.current) {
                         clearInterval(gameTimeIntervalRef.current);
@@ -934,35 +943,6 @@ function App() {
         safeGameRestart();
         setShown(false)
     }
-
-    const click = (index: number) => {
-        if (!welcomeLayerClosed) {
-            return;
-        }
-
-        const p = gameBBList[gameBBListIndex];
-        if (!p) return;
-
-        const targetElement = document.getElementById(p.id);
-        if (!targetElement) return;
-
-        const base = parseInt(targetElement.getAttribute("data-num") || "0") - p.cell;
-        const num = base + index - 1;
-        const id = p.id.substring(0, 11) + num;
-        const target = document.getElementById(id);
-
-        if (!target) return;
-
-        // 直接DOMイベントを使用
-        const event = new MouseEvent('mousedown', {
-            clientX: ((index - 1) * blockSize + index * blockSize) / 2 + (bodyRef.current?.offsetLeft || 0),
-            clientY: (touchArea[0] + touchArea[1]) / 2,
-            bubbles: true,
-            cancelable: true
-        });
-
-        target.dispatchEvent(event);
-    };
 
     useEffect(() => {
         if (isDesktop) {
@@ -1023,7 +1003,7 @@ function App() {
             const gameTime = parseInt(cookie('gameTime'));
             setGameSettingNum(gameTime);
 
-            if (isNaN(gameTime) || gameTime < 0) {
+            if (isNaN(gameTime) || gameTime <= 0) {
                 setGameSettingNum(20);
                 cookie('gameTime', 20);
                 alert(I18N['time-over']);
@@ -1183,6 +1163,15 @@ function App() {
         }
     }, [soundMode]);
 
+    useEffect(() => {
+        setGameTimeText(createTimeText(gameSettingNum))
+    }, [gameSettingNum])
+
+    useEffect(() => {
+        setGameTimeText(createTimeText(gameTimeNum))
+    }, [gameTimeNum])
+
+
     // フォームのエラーも修正します
     const handleGameTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = parseInt(e.target.value);
@@ -1240,33 +1229,6 @@ function App() {
         }
     }
 
-    const createGameLayer = () => {
-        return (
-            <>
-                <div id="GameLayerBG">
-                    {[1, 2].map((i) => (
-                        <div key={i} id={`GameLayer${i}`} className="GameLayer">
-                            {Array.from({ length: 40 }, (_, j) => (
-                                <div
-                                    key={j}
-                                    id={`${i}-${j}`}
-                                    className={`block${j % 4 ? ' bl' : ''}`}
-                                />
-                            ))}
-                        </div>
-                    ))}
-                </div>
-                <div id="GameTimeLayer" className="text-center">
-                    {gameTimeText}
-                </div>
-            </>
-        );
-    }
-
-    const modeToString = (mode: "NORMAL" | "ENDLESS" | "PRACTICE") => {
-        return mode === "NORMAL" ? I18N['normal'] : (mode === "ENDLESS" ? I18N['endless'] : I18N['practice']);
-    }
-
     const closeWelcomeLayer = () => {
         setWelcomeLayerClosed(true);
         updatePanel();
@@ -1274,7 +1236,6 @@ function App() {
 
     const readyBtn = () => {
         closeWelcomeLayer();
-        updatePanel();
     }
 
     const scoreToString = (score: number) => {
@@ -1285,48 +1246,6 @@ function App() {
     const recoverFromError = () => {
         setIsError(false);
         gameRestart();
-    };
-
-    // 初期化処理を安全に行う関数
-    const safeInitialize = () => {
-        try {
-            if (!bodyRef.current) return;
-            
-            // 初期化順序を制御
-            const initSteps = [
-                () => {
-                    // ゲームレイヤーの初期化
-                    const [layer1, layer2] = gameLayerRefs.current;
-                    if (layer1 && layer2) {
-                        refreshGameLayer(layer1);
-                        refreshGameLayer(layer2, 1);
-                    }
-                },
-                () => {
-                    // ブロックサイズの計算
-                    countBlockSize();
-                },
-                () => {
-                    // 設定の初期化
-                    initSetting();
-                }
-            ];
-
-            // 各初期化ステップを実行
-            initSteps.forEach(step => {
-                try {
-                    step();
-                } catch (error) {
-                    console.error('Initialization step failed:', error);
-                    throw error;
-                }
-            });
-
-            setIsInitialized(true);
-        } catch (error) {
-            console.error('Initialization failed:', error);
-            setIsError(true);
-        }
     };
 
     // ゲーム再起動処理を安全に行う関数
@@ -1375,6 +1294,14 @@ function App() {
         }
     }, [isError]);
 
+    useEffect(() => {
+        gameScoreRef.current = gameScore
+    }, [gameScore])
+
+    useEffect(() => {
+        date1Ref.current = date1
+    }, [date1])
+
     return (
         <div id="gameBody">
             {isError ? (
@@ -1396,6 +1323,7 @@ function App() {
                         {I18N['error-occurred']}
                     </div>
                     <button 
+                        type="button"
                         className="btn btn-secondary btn-lg"
                         onClick={recoverFromError}
                     >
@@ -1430,18 +1358,20 @@ function App() {
                     <div className="btncol">
                         <button type="button" className="btn btn-secondary btn-lg" id="replay" onClick={replayBtn}>{I18N['again']}</button>
                         <button type="button" className="btn btn-secondary btn-lg" onClick={() => window.location.reload()}>{I18N['home']}</button>
-                        <button type="button" className="btn btn-secondary btn-lg" onClick={() => window.location.href='https://github.com/konnokai/Rape-Senpai'}>{I18N['repo']}</button>
+                        <button type="button" className="btn btn-secondary btn-lg" onClick={() => window.location.href='https://github.com/cot-tan/Rape-Senpai'}>{I18N['repo']}</button>
                     </div>
                 </div>
             </div>
             <div id="welcome" className="SHADE BOX-M" style={{"display": welcomeLayerClosed? "none" :"block"}}>
                 <div className="welcome-bg FILL"></div>
                 <div className="FILL BOX-M" style={{"position": "absolute", "top":0,"left":0,"right":0,"bottom":0,"zIndex":5}}>
-                    <div className="container">
+                    <div className="container blur" style={{"width": "fit-content", "margin": "auto"}}>
                         <div style={{"fontSize":"2.6em", "color":"#FEF002"}}>{I18N['game-title']}</div>
+                        <div className="column">
                             <a className="btn" onClick={() => changeMode("NORMAL")} style={mode === "NORMAL" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['normal']}</a>
                             <a className="btn" onClick={() => changeMode("ENDLESS")} style={mode === "ENDLESS" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['endless']}</a>
                             <a className="btn" onClick={() => changeMode("PRACTICE")} style={mode === "PRACTICE" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['practice']}</a>
+                        </div>
                             <a id="sound" type="button" className="btn text-nowrap btn-secondary" onClick={() => changeSoundMode()}></a>
                             <div className="input-group">
                                 <div className="input-group-prepend col-2">
