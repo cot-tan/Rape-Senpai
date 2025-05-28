@@ -1406,7 +1406,7 @@ function App() {
             <style>{clickBeforeStyle}</style>
             <style>{clickAfterStyle}</style>
             <div id="GameScoreLayer" className="BBOX SHADE" style={isShown ? {} : {"display": "none"}}>
-                <div style={{"padding":"5%","marginTop": "200px","backgroundColor": "rgba(125, 181, 216, 0.3)"}}>
+                <div className="container blur">
                     <div id="GameScoreLayer-text">{shareText(cps)}</div>
                     <div id="GameScoreLayer-CPS" className="mb-2 d-flex flex-row justify-content-center text-start">
                         <div className="col-3">CPS</div>
@@ -1427,9 +1427,11 @@ function App() {
                             })()}
                         </div>
                     </div>
-                    <button type="button" className="btn btn-secondary btn-lg" id="replay" onClick={replayBtn}>{I18N['again']}</button>
-                    <button type="button" className="btn btn-secondary btn-lg" onClick={() => window.location.reload()}>{I18N['home']}</button>
-                    <button type="button" className="btn btn-secondary btn-lg" onClick={() => window.location.href='https://github.com/konnokai/Rape-Senpai'}>{I18N['repo']}</button>
+                    <div className="btncol">
+                        <button type="button" className="btn btn-secondary btn-lg" id="replay" onClick={replayBtn}>{I18N['again']}</button>
+                        <button type="button" className="btn btn-secondary btn-lg" onClick={() => window.location.reload()}>{I18N['home']}</button>
+                        <button type="button" className="btn btn-secondary btn-lg" onClick={() => window.location.href='https://github.com/konnokai/Rape-Senpai'}>{I18N['repo']}</button>
+                    </div>
                 </div>
             </div>
             <div id="welcome" className="SHADE BOX-M" style={{"display": welcomeLayerClosed? "none" :"block"}}>
@@ -1437,21 +1439,19 @@ function App() {
                 <div className="FILL BOX-M" style={{"position": "absolute", "top":0,"left":0,"right":0,"bottom":0,"zIndex":5}}>
                     <div className="container">
                         <div style={{"fontSize":"2.6em", "color":"#FEF002"}}>{I18N['game-title']}</div>
-                            <div className="modemenu">
-                                <a className="btn" onClick={() => changeMode("NORMAL")} style={mode === "NORMAL" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['normal']}</a>
-                                <a className="btn" onClick={() => changeMode("ENDLESS")} style={mode === "ENDLESS" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['endless']}</a>
-                                <a className="btn" onClick={() => changeMode("PRACTICE")} style={mode === "PRACTICE" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['practice']}</a>
-                            </div>
+                            <a className="btn" onClick={() => changeMode("NORMAL")} style={mode === "NORMAL" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['normal']}</a>
+                            <a className="btn" onClick={() => changeMode("ENDLESS")} style={mode === "ENDLESS" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['endless']}</a>
+                            <a className="btn" onClick={() => changeMode("PRACTICE")} style={mode === "PRACTICE" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['practice']}</a>
                             <a id="sound" type="button" className="btn text-nowrap btn-secondary" onClick={() => changeSoundMode()}></a>
                             <div className="input-group">
                                 <div className="input-group-prepend col-2">
-                                    <span className="input-group-text">{I18N['key']}</span>
+                                    {I18N['key']}
                                 </div>
                                 <input type="text" id="keyboard" className="form-control" maxLength={4} placeholder={I18N['default-dfjk']}/>
                             </div>
                             <div className="input-group">
                                 <div className="input-group-prepend col-2">
-                                    <span className="input-group-text">{I18N['time']}</span>
+                                    {I18N['time']}
                                 </div>
                                 <input 
                                     type="text" 
@@ -1463,14 +1463,14 @@ function App() {
                                     onChange={handleGameTimeChange}
                                 />
                             </div>
-                            <div className="input-group">
+                            <div className="input-group file">
                                 <div className="input-group-prepend col-2">
-                                    <span className="input-group-text">クリック前画像</span>
+                                    クリック前画像
                                 </div>
                                 <input
                                     type="file"
                                     id="click-before-image"
-                                    className="form-control"
+                                    className="form-control file"
                                     accept="image/*"
                                     onChange={handleClickBeforeImage}
                                 />
@@ -1482,14 +1482,14 @@ function App() {
                                     リセット
                                 </button>
                             </div>
-                            <div className="input-group">
+                            <div className="input-group file">
                                 <div className="input-group-prepend col-2">
-                                    <span className="input-group-text">クリック後画像</span>
+                                    クリック後画像
                                 </div>
                                 <input
                                     type="file"
                                     id="click-after-image"
-                                    className="form-control"
+                                    className="form-control file"
                                     accept="image/*"
                                     onChange={handleClickAfterImage}
                                 />
@@ -1501,14 +1501,14 @@ function App() {
                                     リセット
                                 </button>
                             </div>
-                            <div className="input-group">
+                            <div className="input-group file">
                                 <div className="input-group-prepend col-2">
-                                    <span className="input-group-text">タップ音</span>
+                                    タップ音
                                 </div>
                                 <input
                                     type="file"
                                     id="tap-sound"
-                                    className="form-control"
+                                    className="form-control file"
                                     accept="audio/*"
                                     onChange={(e) => handleSoundUpload(e, 'tap')}
                                 />
@@ -1520,14 +1520,14 @@ function App() {
                                     リセット
                                 </button>
                             </div>
-                            <div className="input-group">
+                            <div className="input-group file">
                                 <div className="input-group-prepend col-2">
-                                    <span className="input-group-text">エラー音</span>
+                                    エラー音
                                 </div>
                                 <input
                                     type="file"
                                     id="err-sound"
-                                    className="form-control"
+                                    className="form-control file"
                                     accept="audio/*"
                                     onChange={(e) => handleSoundUpload(e, 'err')}
                                 />
@@ -1541,12 +1541,12 @@ function App() {
                             </div>
                             <div className="input-group">
                                 <div className="input-group-prepend col-2">
-                                    <span className="input-group-text">終了音</span>
+                                    終了音
                                 </div>
                                 <input
                                     type="file"
                                     id="end-sound"
-                                    className="form-control"
+                                    className="form-control file"
                                     accept="audio/*"
                                     onChange={(e) => handleSoundUpload(e, 'end')}
                                 />
