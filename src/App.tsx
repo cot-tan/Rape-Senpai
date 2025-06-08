@@ -2,6 +2,7 @@ import './App.css'
 import { useEffect, useState, useRef } from 'react'
 import * as ja from "./assets/i18n/ja.json" with { type: "json" }
 import * as zh from "./assets/i18n/zh.json" with { type: "json" }
+import * as en from "./assets/i18n/en.json" with { type: "json" }
 import clickBeforeImage from './image/ClickBefore.png'
 import clickAfterImage from './image/AfterClicking.png'
 import { MODE_NORMAL, MODE_ENDLESS, MODE_PRACTICE, GameMode, SoundType, I18nKey } from './constants.ts';
@@ -81,8 +82,10 @@ function getSoundMode(): 'on' | 'off' {
 }
 
 function App() {
-    const userLang = (navigator.language).startsWith('ja') ? 'ja' : 'zh';
-    const I18N = userLang === "ja" ? ja.default : zh.default;
+    const userLang = (navigator.language).startsWith('ja') ? 'ja' : (navigator.language).startsWith('en') ? 'en' : 'zh';
+    const I18N = userLang === "ja" 
+        ? ja.default 
+        : userLang === "en" ? en.default : zh.default;
     const [mode, setMode] = useState<GameMode>(() => {
         const savedMode = cookie('gameMode');
         if (!savedMode) return "NORMAL";
@@ -128,6 +131,7 @@ function App() {
     const refreshSizeTimeRef = useRef<number | null>(null);
     const gameScoreRef = useRef<number | null>(null)
     const date1Ref = useRef<Date | undefined>(undefined)
+    const activeRef = useRef(false)
 
     const [map, setMap] = useState<{[key: string]: number}>({'d': 1, 'f': 2, 'j': 3, 'k': 4});
     const isDesktop = !navigator.userAgent.match(/(ipad|iphone|ipod|android|windows phone)/i);
@@ -148,10 +152,6 @@ function App() {
 
     const [lastTapTime, setLastTapTime] = useState(0);
     const TAP_THRESHOLD = 8; // 16msから8msに短縮（120FPS対応）
-    const TAP_MOVE_THRESHOLD = 30; // タッチ移動の許容範囲をさらに広げる
-    const TAP_TIME_THRESHOLD = 500; // タップの最大許容時間を延長
-
-    const [touchStartPos, setTouchStartPos] = useState<{ x: number, y: number, time: number, target: BlockElement } | null>(null);
 
     const [isError, setIsError] = useState(false);
 
@@ -536,174 +536,48 @@ function App() {
         }
     }
 
-    // タッチ処理を即座に実行するための関数
-    const processTouchImmediately = (x: number, y: number, target: BlockElement) => {
-        const currentTime = Date.now();
-        const timeSinceLastTap = currentTime - lastTapTime;
-        
-        if (timeSinceLastTap < TAP_THRESHOLD) {
-            return false;
-        }
-        
-        setLastTapTime(currentTime);
-
-        if (isGameOver) {
-            return false;
-        }
-
-        const p = gameBBList[gameBBListIndex];
-        if (!p || !target) return false;
-
-        if (y > touchArea[0] || y < touchArea[1]) {
-            return false;
-        }
-
-        const blockX = x - (x % blockSize);
-        const blockIndex = Math.floor(blockX / blockSize);
-        
-        // ブロックの判定を緩和
-        const tolerance = blockSize * 0.15; // 許容範囲を15%に増加
-        const isWithinBlock = (index: number) => {
-            const blockStart = index * blockSize - tolerance;
-            const blockEnd = (index + 1) * blockSize + tolerance;
-            return x >= blockStart && x < blockEnd;
-        };
-
-        const isCorrectBlock = (p.id === target.id && target.notEmpty) || 
-            (p.cell === blockIndex && isWithinBlock(blockIndex));
-
-        if (isCorrectBlock) {
-            if (!isGameStart) {
-                gameStart();
-            }
-
-            const targetElement = document.getElementById(p.id) as BlockElement;
-            if (targetElement) {
-                targetElement.className = targetElement.className.replace(_ttreg, ' tt$1');
-                playSound('tap');
-                
-                // 即座に状態を更新
-                setGameBBlistIndex(prev => prev + 1);
-                setGameScore(prev => prev + 1);
-                setScore(prev => prev + 1);
-                
-                // アニメーションのみを遅延
-                requestAnimationFrame(() => {
-                    updatePanel();
-                    gameLayerMoveNextRow();
-                });
-            }
-            return true;
-        } else if (isGameStart && !target.notEmpty) {
-            setClickable(false)
-            playSound('err');
-            target.classList.add('bad');
-            if (mode !== "PRACTICE") {
-                const currentCPS = calculateCurrentCPS();
-                setCPS(currentCPS);
-                
-                if (mode === "NORMAL" && gameTimeNum <= 0) {
-                    return false;
-                }
-                setTimeout(() => {
-                    gameOver(currentCPS);
-                }, 500);
-            } else {
-                setTimeout(() => {
-                    target.classList.remove('bad');
-                }, 500);
-            }
-        }
-        return false;
-    };
-
     const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
         
+        activeRef.current = true
+
         const touch = e.touches[0];
         const rect = bodyRef.current?.getBoundingClientRect();
         if (!rect) return;
 
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
-        const target = e.target as BlockElement;
-        
-        // タッチ開始時に即座に処理を試みる
-        const processed = processTouchImmediately(x, y, target);
-        if (!processed) {
-            setTouchStartPos({ x, y, time: Date.now(), target });
-        }
-    };
 
-    const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        if (!touchStartPos) return;
-
-        const touch = e.touches[0];
-        const rect = bodyRef.current?.getBoundingClientRect();
-        if (!rect) return;
-
-        const currentX = touch.clientX - rect.left;
-        const currentY = touch.clientY - rect.top;
-        
-        const moveX = Math.abs(currentX - touchStartPos.x);
-        const moveY = Math.abs(currentY - touchStartPos.y);
-
-        // 移動が大きい場合はタッチをキャンセル
-        if (moveX > TAP_MOVE_THRESHOLD || moveY > TAP_MOVE_THRESHOLD) {
-            setTouchStartPos(null);
-        }
-    };
-
-    const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        if (!touchStartPos) return;
-
-        const touch = e.changedTouches[0];
-        const rect = bodyRef.current?.getBoundingClientRect();
-        if (!rect) return;
-
-        const endX = touch.clientX - rect.left;
-        const endY = touch.clientY - rect.top;
-        const endTime = Date.now();
-
-        if (endTime - touchStartPos.time <= TAP_TIME_THRESHOLD) {
-            const moveX = Math.abs(endX - touchStartPos.x);
-            const moveY = Math.abs(endY - touchStartPos.y);
-
-            if (moveX <= TAP_MOVE_THRESHOLD && moveY <= TAP_MOVE_THRESHOLD) {
-                processTouchImmediately(endX, endY, touchStartPos.target);
-            }
-        }
-
-        setTouchStartPos(null);
-    };
-
-    const handleTouchCancel = (e: React.TouchEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setTouchStartPos(null);
+        console.log(`[handleTouchStart]:`, {
+            touch,
+            rect,
+            x,
+            y,
+            activeRef
+        })
+        handleGameTap(x, y, e.target as BlockElement)
+        activeRef.current = false
     };
 
     const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        if(!isDesktop) return;
         e.preventDefault();
         e.stopPropagation();
         
+        activeRef.current = true
+
         const rect = bodyRef.current?.getBoundingClientRect();
         if (!rect) return;
 
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         handleGameTap(x, y, e.target as BlockElement);
+        activeRef.current = false
     };
 
     const handleGameTap = (x: number, y: number, target: BlockElement) => {
-        if(!isClickable) return false
+        if(!isClickable || !activeRef.current) return false
         const currentTime = Date.now();
         const timeSinceLastTap = currentTime - lastTapTime;
         
@@ -746,7 +620,8 @@ function App() {
         
         console.log("[processTouch]", {
             isCorrectBlock,
-            isGameOver
+            isGameOver,
+            activeRef
         })
         if (isCorrectBlock) {
             if (!isGameStart) {
@@ -1190,6 +1065,9 @@ function App() {
     }, [mode, score]);
 
     const refreshSizeHandler = () => {
+        console.log("[refreshSizeHandler]:", {
+
+        })
         if (refreshSizeTimeRef.current) {
             window.clearTimeout(refreshSizeTimeRef.current);
         }
@@ -1500,9 +1378,7 @@ function App() {
                 id="GameLayerBG"
                 ref={gameLayerBGRef}
                 onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                onTouchCancel={handleTouchCancel}
+                onTouchEnd={() => activeRef.current = false}
                 onMouseDown={handleMouseDown}
             >
                 <GameLayer id={1} gameLayerRefs={gameLayerRefs} />
@@ -1516,3 +1392,4 @@ function App() {
 }
 
 export default App
+
