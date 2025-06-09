@@ -1,3 +1,4 @@
+// deno-lint-ignore-file jsx-no-useless-fragment
 import './App.css'
 import { useEffect, useState, useRef } from 'react'
 import * as ja from "./assets/i18n/ja.json" with { type: "json" }
@@ -123,7 +124,9 @@ function App() {
     const [date1, setDate1] = useState<Date>()
     const [deviationTime, _setDeviationTime] = useState(0)
 
-    const [gameTimeText, setGameTimeText] = useState<string>('');
+    const [_gameTimeText, setGameTimeText] = useState<string>('');
+    const [gameTime, setGameTime] = useState<number>(20);
+    const [gameTapRate, setGameTapRate] = useState<string>(I18N['calculating'])
     const gameTimeLayerRef = useRef<HTMLDivElement>(null);
 
     const gameLayerBGRef = useRef<HTMLDivElement>(null);
@@ -228,10 +231,9 @@ function App() {
 
     const updatePanel = () => {
         setClickable(true)
-        let newText = '';
         if (mode === "NORMAL") {
             if (!isGameOver) {
-                newText = createTimeText(gameTimeNum);
+                setGameTime(gameTimeNum);
                 console.log("[NORMAL] Time and State:", {
                     gameTimeNum,
                     gameStartTime,
@@ -244,7 +246,7 @@ function App() {
         } else if (mode === "ENDLESS") {
             const currentCPS = getCPS();
             const text = (currentCPS === 0 ? I18N['calculating'] : currentCPS.toFixed(2));
-            newText = `CPS:${text}`;
+            setGameTapRate(text)
             console.log("[ENDLESS] CPS and State:", {
                 currentCPS,
                 gameStartDatetime,
@@ -254,13 +256,11 @@ function App() {
                 isGameOver
             });
         } else {
-            newText = `SCORE:${gameScore}`;
             console.log("[PRACTICE] Score:", {
                 gameScore,
                 gameBBListIndex
             });
         }
-        setGameTimeText(newText);
     }
 
     const gameRestart = () => {
@@ -358,12 +358,6 @@ function App() {
     }
 
     const showGameScoreLayer = (cps: number) => {
-        const gameScoreLayer = document.getElementById('GameScoreLayer');
-        if (!gameScoreLayer) return;
-        
-        const targetElement = document.getElementById(gameBBList[Math.max(0, gameBBListIndex - 1)]?.id || '');
-        const classMatch = targetElement?.className.match(_ttreg);
-        const c = classMatch ? classMatch[1] : '1';
         const score = gameScore;
         const best = getBestScore(score, cps);
 
@@ -381,10 +375,6 @@ function App() {
                 best
             });
         }
-        
-        gameScoreLayer.className = `BBOX SHADE bgc${c}`;
-        gameScoreLayer.style.color = isTimeValid || mode !== "NORMAL" ? '' : 'red';
-        gameScoreLayer.style.display = 'block';
         setShown(true);
     }
 
@@ -711,7 +701,6 @@ function App() {
                     gameLayerBGRef.current.className = gameLayerBGRef.current.className.replace(' flash', '');
                 }
                 showGameScoreLayer(finalCPS || 0);
-                focusOnReplay();
             }, 1000);
         } else if (mode === "ENDLESS") {
             setTimeout(() => {
@@ -719,7 +708,6 @@ function App() {
                     gameLayerBGRef.current.className = '';
                 }
                 showGameScoreLayer(finalCPS || getCPS());
-                focusOnReplay();
             }, 1000);
         }
     };
@@ -801,17 +789,6 @@ function App() {
         } else if (mode === "ENDLESS") {
             setGameStartTime(prev => prev + 1);
         }
-    }
-
-    const focusOnReplay = () => {
-        const replayButton = document.getElementById('replay');
-        if (replayButton) {
-            replayButton.focus();
-        }
-    }
-
-    const createTimeText = (n: number) => {
-        return 'TIME:' + Math.ceil(n);
     }
 
     const replayBtn = () => {
@@ -1031,21 +1008,12 @@ function App() {
     }, []);
 
     useEffect(() => {
-        // Initialize sound button text
-        const soundButton = document.getElementById('sound');
-        if (soundButton) {
-            soundButton.textContent = I18N[`sound-${soundMode}` as keyof typeof I18N];
-        }
-    }, [soundMode]);
-
-    useEffect(() => {
-        setGameTimeText(createTimeText(gameSettingNum))
+        setGameTime(gameSettingNum)
     }, [gameSettingNum])
 
     useEffect(() => {
-        setGameTimeText(createTimeText(gameTimeNum))
+        setGameTime(gameTimeNum)
     }, [gameTimeNum])
-
 
     // フォームのエラーも修正します
     const handleGameTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1105,15 +1073,6 @@ function App() {
             f.y = -blockSize * Math.floor(a.children.length / 4) + y;
             f.style.transform = `translate3D(0,${f.y}px,0)`;
         }
-    }
-
-    const closeWelcomeLayer = () => {
-        setWelcomeLayerClosed(true);
-        updatePanel();
-    }
-
-    const readyBtn = () => {
-        closeWelcomeLayer();
     }
 
     const scoreToString = (score: number) => {
@@ -1211,46 +1170,56 @@ function App() {
             ) : null}
             <style>{clickBeforeStyle}</style>
             <style>{clickAfterStyle}</style>
-            <div id="GameScoreLayer" className="BBOX SHADE" style={isShown ? {} : {"display": "none"}}>
-                <div className="container blur">
-                    <div id="GameScoreLayer-text">{shareText(cps)}</div>
-                    <div id="GameScoreLayer-CPS" className="mb-2 d-flex flex-row justify-content-center text-start">
-                        <div className="col-3">CPS</div>
-                        <div className="col-2" id="cps">{cps.toFixed(2)}</div>
+            <div 
+                id="GameLayerBG"
+                ref={gameLayerBGRef}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={() => activeRef.current = false}
+                onMouseDown={handleMouseDown}
+            >
+                <GameLayer id={1} gameLayerRefs={gameLayerRefs} />
+                <GameLayer id={2} gameLayerRefs={gameLayerRefs} />
+            </div>
+            <div className="ChromeLayer">
+                <div className="ControlLayer">
+                    <button type="button" className="btn btn-secondary btn-lg" onClick={() => {
+                        setWelcomeLayerClosed((prev) => {
+                            if(!prev){
+                                replayBtn()
+                            } 
+                            return !prev
+                        })}}>{I18N['home']}</button>
+                    <button type="button" className="btn text-nowrap btn-secondary" onClick={() => changeSoundMode()}>
+                        {I18N[`sound-${soundMode}` as keyof typeof I18N]}
+                    </button>
+                    <button type="button" className="btn btn-secondary btn-lg" id="replay" onClick={replayBtn}>{I18N['again']}</button>
+                </div>
+                {welcomeLayerClosed ?<div id="bottom" ref={gameTimeLayerRef} className="text-center">
+                    <div className="mode">
+                        {mode}
                     </div>
-                    <div id="GameScoreLayer-score" className="mb-2 d-flex flex-row justify-content-center text-start" style={{'display': mode === "ENDLESS" ? 'none' : ''}}>
-                        <div className="col-3">{I18N['score']}</div>
-                        <div className="col-2" id="score">{scoreToString(score)}</div>
-                    </div>
-                    <div id="GameScoreLayer-best" className="mb-2 d-flex flex-row justify-content-center text-start">
-                        <div className="col-3">{I18N['best']}</div>
-                        <div className="col-2" id="best">
-                            {(() => {
-                                const bestScores = getBestScore(score, cps);
-                                return mode === "ENDLESS" ? 
-                                    bestScores.cps.toFixed(2) : 
-                                    scoreToString(bestScores.score);
-                            })()}
+                    <div className="scoreChrome">
+                        {mode === "NORMAL" ? <div className="ScoreItem">
+                            <div>Time: </div>
+                            <div>{gameTime}</div>
+                        </div> : <></>}
+                        {mode === "ENDLESS" ? <div className="ScoreItem">
+                            <div>Tap Rate: </div>
+                            <div>{gameTapRate}</div>
+                        </div> : <></>}
+                        <div className="ScoreItem">
+                            <div>Score: </div>
+                            <div>{gameScore}</div>
                         </div>
                     </div>
-                    <div className="btncol">
-                        <button type="button" className="btn btn-secondary btn-lg" id="replay" onClick={replayBtn}>{I18N['again']}</button>
-                        <button type="button" className="btn btn-secondary btn-lg" onClick={() => window.location.reload()}>{I18N['home']}</button>
-                        <button type="button" className="btn btn-secondary btn-lg" onClick={() => window.location.href='https://github.com/cot-tan/Rape-Senpai'}>{I18N['repo']}</button>
-                    </div>
                 </div>
-            </div>
-            <div id="welcome" className="SHADE BOX-M" style={{"display": welcomeLayerClosed? "none" :"block"}}>
-                <div className="welcome-bg FILL"></div>
-                <div className="FILL BOX-M" style={{"position": "absolute", "top":0,"left":0,"right":0,"bottom":0,"zIndex":5}}>
-                    <div className="container blur" style={{"width": "fit-content", "margin": "auto"}}>
+                 :<div className="container" style={{"width": "fit-content", "margin": "auto", "display": welcomeLayerClosed? "none" :"flex"}}>
                         <div style={{"fontSize":"2.6em", "color":"#FEF002"}}>{I18N['game-title']}</div>
                         <div className="column">
                             <a className="btn" onClick={() => changeMode("NORMAL")} style={mode === "NORMAL" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['normal']}</a>
                             <a className="btn" onClick={() => changeMode("ENDLESS")} style={mode === "ENDLESS" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['endless']}</a>
                             <a className="btn" onClick={() => changeMode("PRACTICE")} style={mode === "PRACTICE" ? {backgroundColor: "#fff", color: "#000"} : {}}>{I18N['practice']}</a>
                         </div>
-                            <a id="sound" type="button" className="btn text-nowrap btn-secondary" onClick={() => changeSoundMode()}></a>
                             <div className="input-group">
                                 <div className="input-group-prepend col-2">
                                     {I18N['key']}
@@ -1368,24 +1337,25 @@ function App() {
                             </div>
                             <a className="btn btn-primary btn-lg mb-3" onClick={() => {
                                 saveCookie();
-                                readyBtn()
-                            }}>{I18N['start']}</a>
+                            }}>Save</a>
 
                     </div>
+                }
+                {isShown ?<div className="container">
+                    <div id="GameScoreLayer-text">{shareText(cps)}</div>
+                    <div id="GameScoreLayer-best" className="mb-2 d-flex flex-row justify-content-center text-start">
+                        <div className="col-3">{I18N['best']}</div>
+                        <div className="col-2" id="best">
+                            {(() => {
+                                const bestScores = getBestScore(score, cps);
+                                return mode === "ENDLESS" ? 
+                                    bestScores.cps.toFixed(2) : 
+                                    scoreToString(bestScores.score);
+                            })()}
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div 
-                id="GameLayerBG"
-                ref={gameLayerBGRef}
-                onTouchStart={handleTouchStart}
-                onTouchEnd={() => activeRef.current = false}
-                onMouseDown={handleMouseDown}
-            >
-                <GameLayer id={1} gameLayerRefs={gameLayerRefs} />
-                <GameLayer id={2} gameLayerRefs={gameLayerRefs} />
-            </div>
-            <div id="GameTimeLayer" ref={gameTimeLayerRef} className="text-center">
-                {gameTimeText}
+                : <></>}
             </div>
         </div>
     )
