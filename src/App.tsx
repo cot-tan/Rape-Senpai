@@ -147,8 +147,9 @@ function App() {
   const [gameScore, setGameScore] = useState(1);
   const [date1, setDate1] = useState<Date>();
   const [deviationTime, _setDeviationTime] = useState(0);
+  const [soundMenuOpened, setSoundMenuOpened] = useState(false);
+  const [inputMenuOpened, setInputMenuOpened] = useState(false);
 
-  const [_gameTimeText, setGameTimeText] = useState<string>("");
   const [gameTime, setGameTime] = useState<number>(20);
   const [gameTapRate, setGameTapRate] = useState<string>(I18N["calculating"]);
   const gameTimeLayerRef = useRef<HTMLDivElement>(null);
@@ -277,6 +278,11 @@ function App() {
     if (mode === "NORMAL") {
       if (!isGameOver) {
         setGameTime(gameTimeNum);
+        const currentCPS = getCPS();
+        const text = currentCPS === 0
+          ? I18N["calculating"]
+          : currentCPS.toFixed(2);
+        setGameTapRate(text);
         console.log("[NORMAL] Time and State:", {
           gameTimeNum,
           gameStartTime,
@@ -338,28 +344,6 @@ function App() {
   };
 
   const shareText = (cps: number) => {
-    if (mode === "NORMAL") {
-      // date1がない場合は早期リターン
-      if (!date1) {
-        return I18N["text-level-1"];
-      }
-
-      // 現在時刻との差分を計算
-      const currentDeviation = new Date().getTime() - date1.getTime();
-      console.log("[NORMAL] Time deviation check:", {
-        currentDeviation,
-        gameSettingNum,
-        threshold: (gameSettingNum + 3) * 1000,
-        date1: date1.getTime(),
-      });
-
-      // 制限時間 + 3秒を超えているかチェック
-      if (currentDeviation > (gameSettingNum + 3) * 1000) {
-        return I18N["time-over"] +
-          ((currentDeviation / 1000) - gameSettingNum).toFixed(2) + "s";
-      }
-    }
-
     // CPSに基づくレベル判定
     if (cps <= 2.5) return I18N["text-level-1"];
     if (cps <= 5) return I18N["text-level-2"];
@@ -770,6 +754,7 @@ function App() {
 
     const now = new Date();
     setIsGameStart(true);
+    setGameStartDatetime(now.getTime());
 
     if (mode === "NORMAL") {
       console.log("[NORMAL] Game Start:", {
@@ -778,8 +763,6 @@ function App() {
         gameTimeNum,
       });
       setDate1(now);
-    } else if (mode === "ENDLESS") {
-      setGameStartDatetime(now.getTime());
     }
 
     if (!gameTimeIntervalRef.current) {
@@ -789,7 +772,7 @@ function App() {
 
   const getCPS = () => {
     if (
-      mode !== "ENDLESS" || !gameStartDatetime || !gameScore ||
+      !gameStartDatetime || !gameScore ||
       gameStartTime < 2
     ) {
       return 0;
@@ -802,11 +785,8 @@ function App() {
   };
 
   const timer = () => {
-    if (mode === "PRACTICE") {
-      return;
-    }
-
     if (mode === "NORMAL") {
+      setGameStartTime((prev) => prev + 1);
       setGameTimeNum((prev) => {
         const newTimeNum = prev - 1;
         console.log("[NORMAL] Timer update:", {
@@ -827,7 +807,6 @@ function App() {
             clearInterval(gameTimeIntervalRef.current);
             gameTimeIntervalRef.current = null;
           }
-          setGameTimeText(getI18nText("time-up"));
           if (gameLayerBGRef.current) {
             gameLayerBGRef.current.className += " flash";
           }
@@ -1271,6 +1250,53 @@ function App() {
         <GameLayer id={2} gameLayerRefs={gameLayerRefs} columns={columns} />
       </div>
       <div className="ChromeLayer">
+        <div id="top" ref={gameTimeLayerRef} className="text-center">
+          <div className="ScoreItem">
+            {I18N[
+              mode === "NORMAL"
+                ? "normal"
+                : mode === "ENDLESS"
+                ? "endless"
+                : "practice"
+            ]}
+          </div>
+          <div className="scoreChrome">
+            {mode === "NORMAL"
+              ? (
+                <div className="ScoreItem">
+                  <div>Time</div>
+                  <div>{gameTime}</div>
+                </div>
+              )
+              : <></>}
+
+            {mode !== "PRACTICE"
+              ? (
+                <div className="ScoreItem">
+                  <div>Tap Rate</div>
+                  <div>{gameTapRate}</div>
+                </div>
+              )
+              : <></>}
+            <div className="ScoreItem">
+              <div>{I18N["score"]}</div>
+              <div>{gameScore}</div>
+            </div>
+
+            <div className="ScoreItem">
+              <div>{I18N["best"]}</div>
+              <div>
+                {(() => {
+                  const bestScores = getBestScore(score, cps);
+                  return mode === "ENDLESS"
+                    ? bestScores.cps.toFixed(2)
+                    : scoreToString(bestScores.score);
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="ControlLayer">
           <button
             type="button"
@@ -1288,13 +1314,6 @@ function App() {
           </button>
           <button
             type="button"
-            className="btn text-nowrap btn-secondary"
-            onClick={() => changeSoundMode()}
-          >
-            {I18N[`sound-${soundMode}` as keyof typeof I18N]}
-          </button>
-          <button
-            type="button"
             className="btn btn-secondary btn-lg"
             id="replay"
             onClick={replayBtn}
@@ -1302,64 +1321,16 @@ function App() {
             {I18N["again"]}
           </button>
         </div>
-        <div id="bottom" ref={gameTimeLayerRef} className="text-center">
-          <div className="mode">
-            {mode}
-          </div>
-          <div className="scoreChrome">
-            {mode === "NORMAL"
-              ? (
-                <div className="ScoreItem">
-                  <div>Time:</div>
-                  <div>{gameTime}</div>
-                </div>
-              )
-              : <></>}
-            {mode === "ENDLESS"
-              ? (
-                <div className="ScoreItem">
-                  <div>Tap Rate:</div>
-                  <div>{gameTapRate}</div>
-                </div>
-              )
-              : <></>}
-            <div className="ScoreItem">
-              <div>Score:</div>
-              <div>{gameScore}</div>
-            </div>
-          </div>
-        </div>
         {isShown
           ? (
             <div className="container">
               <div id="GameScoreLayer-text">{shareText(cps)}</div>
-              <div
-                id="GameScoreLayer-best"
-                className="mb-2 d-flex flex-row justify-content-center text-start"
-              >
-                <div className="col-3">{I18N["best"]}</div>
-                <div className="col-2" id="best">
-                  {(() => {
-                    const bestScores = getBestScore(score, cps);
-                    return mode === "ENDLESS"
-                      ? bestScores.cps.toFixed(2)
-                      : scoreToString(bestScores.score);
-                  })()}
-                </div>
-              </div>
             </div>
           )
           : <></>}
         {welcomeLayerClosed ? <></> : (
-          <div
-            className="container"
-            style={{
-              "width": "fit-content",
-              "margin": "auto",
-              "display": welcomeLayerClosed ? "none" : "flex",
-            }}
-          >
-            <div style={{ "fontSize": "2.6em", "color": "#FEF002" }}>
+          <div className="container">
+            <div className="game-title">
               {I18N["game-title"]}
             </div>
             <div className="modeSelect">
@@ -1394,140 +1365,176 @@ function App() {
                 {I18N["practice"]}
               </button>
             </div>
-            <div className="input-group">
-              <div className="input-group-prepend col-2">
-                {I18N["key"]}
+            <div className="card">
+              <div className="prepend">
+                <div>sound</div>
+                <button
+                  type="button"
+                  onClick={() => setSoundMenuOpened((prev) => !prev)}
+                >
+                  {soundMenuOpened ? "x" : "v"}
+                </button>
               </div>
-              <input
-                type="text"
-                id="keyboard"
-                className="form-control"
-                maxLength={4}
-                placeholder={I18N["default-dfjk"]}
-              />
+              {soundMenuOpened
+                ? (
+                  <div className="cardItem">
+                    <button
+                      type="button"
+                      onClick={() => changeSoundMode()}
+                    >
+                      {I18N[`sound-${soundMode}` as keyof typeof I18N]}
+                    </button>
+                    <div className="input-group file">
+                      <div className="input-group-prepend col-2">
+                        {I18N["tap-sound"]}
+                      </div>
+                      <input
+                        type="file"
+                        id="tap-sound"
+                        className="form-control file"
+                        accept="audio/*"
+                        onChange={(e) => handleSoundUpload(e, "tap")}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => resetSound("tap")}
+                      >
+                        リセット
+                      </button>
+                    </div>
+                    <div className="input-group file">
+                      <div className="input-group-prepend col-2">
+                        {I18N["error-sound"]}
+                      </div>
+                      <input
+                        type="file"
+                        id="err-sound"
+                        className="form-control file"
+                        accept="audio/*"
+                        onChange={(e) => handleSoundUpload(e, "err")}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => resetSound("err")}
+                      >
+                        リセット
+                      </button>
+                    </div>
+                    <div className="input-group">
+                      <div className="input-group-prepend col-2">
+                        {I18N["end-sound"]}
+                      </div>
+                      <input
+                        type="file"
+                        id="end-sound"
+                        className="form-control file"
+                        accept="audio/*"
+                        onChange={(e) => handleSoundUpload(e, "end")}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => resetSound("end")}
+                      >
+                        リセット
+                      </button>
+                    </div>
+                  </div>
+                )
+                : <></>}
             </div>
-            <div className="input-group">
-              <div className="input-group-prepend col-2">
-                {I18N["time"]}
+
+            <div className="card">
+              <div className="prepend">
+                <div>Input</div>
+                <button
+                  onClick={() => setInputMenuOpened((prev) => !prev)}
+                  type="button"
+                >
+                  {inputMenuOpened ? "x" : "v"}
+                </button>
               </div>
-              <input
-                type="text"
-                id="gameTime"
-                className="form-control"
-                maxLength={4}
-                placeholder={I18N["default-20s"]}
-                value={gameSettingNum}
-                onChange={handleGameTimeChange}
-              />
-            </div>
-            <div className="input-group">
-              <div className="input-group-prepend col-2">
-                Columns
-              </div>
-              <input
-                type="text"
-                id="gameTime"
-                className="form-control"
-                maxLength={10}
-                placeholder="unko"
-                value={columns}
-                onChange={handleColumnChange}
-              />
-            </div>
-            <div className="input-group file">
-              <div className="input-group-prepend col-2">
-                クリック前画像
-              </div>
-              <input
-                type="file"
-                id="click-before-image"
-                className="form-control file"
-                accept="image/*"
-                onChange={handleClickBeforeImage}
-              />
-              <button
-                className="btn btn-outline-secondary"
-                type="button"
-                onClick={resetClickBeforeImage}
-              >
-                リセット
-              </button>
-            </div>
-            <div className="input-group file">
-              <div className="input-group-prepend col-2">
-                クリック後画像
-              </div>
-              <input
-                type="file"
-                id="click-after-image"
-                className="form-control file"
-                accept="image/*"
-                onChange={handleClickAfterImage}
-              />
-              <button
-                className="btn btn-outline-secondary"
-                type="button"
-                onClick={resetClickAfterImage}
-              >
-                リセット
-              </button>
-            </div>
-            <div className="input-group file">
-              <div className="input-group-prepend col-2">
-                {I18N["tap-sound"]}
-              </div>
-              <input
-                type="file"
-                id="tap-sound"
-                className="form-control file"
-                accept="audio/*"
-                onChange={(e) => handleSoundUpload(e, "tap")}
-              />
-              <button
-                className="btn btn-outline-secondary"
-                type="button"
-                onClick={() => resetSound("tap")}
-              >
-                リセット
-              </button>
-            </div>
-            <div className="input-group file">
-              <div className="input-group-prepend col-2">
-                {I18N["error-sound"]}
-              </div>
-              <input
-                type="file"
-                id="err-sound"
-                className="form-control file"
-                accept="audio/*"
-                onChange={(e) => handleSoundUpload(e, "err")}
-              />
-              <button
-                className="btn btn-outline-secondary"
-                type="button"
-                onClick={() => resetSound("err")}
-              >
-                リセット
-              </button>
-            </div>
-            <div className="input-group">
-              <div className="input-group-prepend col-2">
-                {I18N["end-sound"]}
-              </div>
-              <input
-                type="file"
-                id="end-sound"
-                className="form-control file"
-                accept="audio/*"
-                onChange={(e) => handleSoundUpload(e, "end")}
-              />
-              <button
-                className="btn btn-outline-secondary"
-                type="button"
-                onClick={() => resetSound("end")}
-              >
-                リセット
-              </button>
+              {inputMenuOpened
+                ? (
+                  <div className="cardItem">
+                    <div className="input-group">
+                      <div className="input-group-prepend col-2">
+                        {I18N["key"]}
+                      </div>
+                      <input
+                        type="text"
+                        id="keyboard"
+                        className="form-control"
+                        maxLength={4}
+                        placeholder={I18N["default-dfjk"]}
+                      />
+                    </div>
+                    <div className="input-group">
+                      <div className="input-group-prepend col-2">
+                        {I18N["time"]}
+                      </div>
+                      <input
+                        type="text"
+                        id="gameTime"
+                        className="form-control"
+                        maxLength={4}
+                        placeholder={I18N["default-20s"]}
+                        value={gameSettingNum}
+                        onChange={handleGameTimeChange}
+                      />
+                    </div>
+                    <div className="input-group">
+                      <div className="input-group-prepend">
+                        Columns
+                      </div>
+                      <input
+                        type="text"
+                        id="gameTime"
+                        className="form-control"
+                        maxLength={10}
+                        placeholder="unko"
+                        value={columns}
+                        onChange={handleColumnChange}
+                      />
+                    </div>
+                    <div className="input-group file">
+                      <div className="input-group-prepend">
+                        クリック前画像
+                      </div>
+                      <input
+                        type="file"
+                        id="click-before-image"
+                        className="form-control file"
+                        accept="image/*"
+                        onChange={handleClickBeforeImage}
+                      />
+                      <button
+                        type="button"
+                        onClick={resetClickBeforeImage}
+                      >
+                        リセット
+                      </button>
+                    </div>
+                    <div className="input-group file">
+                      <div className="input-group-prepend">
+                        クリック後画像
+                      </div>
+                      <input
+                        type="file"
+                        id="click-after-image"
+                        className="form-control file"
+                        accept="image/*"
+                        onChange={handleClickAfterImage}
+                      />
+                      <button
+                        type="button"
+                        onClick={resetClickAfterImage}
+                      >
+                        リセット
+                      </button>
+                    </div>
+                  </div>
+                )
+                : <></>}
             </div>
           </div>
         )}

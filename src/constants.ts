@@ -33,7 +33,6 @@ export type I18nKey =
   | "game-title"
   | "game-intro1"
   | "game-intro2"
-  | "game-intro3"
   | "hint-keyboard-support"
   | "hint-pointer-support"
   | "time-up"

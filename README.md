@@ -7,3 +7,5 @@
 https://rape.konnokai.me
 
 原專案: https://github.com/arcxingye/EatKano
+
+繁中 by 孤之界 日本語訳 by nikkorinyuki
