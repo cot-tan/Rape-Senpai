@@ -43,835 +43,862 @@
 }
 
 body {
-    font-family: "Helvetica Neue", Helvetica, STHeiTi, sans-serif;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100vh;
-    overflow: hidden;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+  font-family: "Helvetica Neue", Helvetica, STHeiTi, sans-serif;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 /* 基本レイアウト */
 .SHADE {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    bottom: 0;
-    z-index: 11;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  bottom: 0;
+  z-index: 11;
 }
 
 .FILL {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow-y: scroll;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: scroll;
 }
 
 .column {
-    display: flex;
-    gap: 1em;
+  display: flex;
+  gap: 1em;
 }
 
 #GameLayerBG {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: hidden;
-    background: var(--bg-color);
-    width: 100%;
-    height: 100%;
-    touch-action: none;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  background: var(--bg-color);
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .GameLayer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    transition: transform 100ms;
-    will-change: transform;
-    transform: translate3d(0, 0, 0);
-    backface-visibility: hidden;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  transition: transform 100ms;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ブロック */
 .block {
-    position: absolute;
-    border-top: 1px solid var(--border-color);
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 90% auto;
-    will-change: transform;
-    transform: translate3d(0, 0, 0);
-    backface-visibility: hidden;
-    touch-action: none;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
+  position: absolute;
+  border-top: 1px solid var(--border-color);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 90% auto;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .bl {
-    border-left: 1px solid var(--border-color);
+  border-left: 1px solid var(--border-color);
 }
 
 /* ブロックの状態 */
 .t1, .t2, .t3, .t4, .t5 {
-    background-size: auto 100%;
-    background-image: url('./image/ClickBefore.png');
-    transition: background-image 0.1s;
-    will-change: background-image;
+  background-size: auto 100%;
+  background-image: url("./image/ClickBefore.png");
+  transition: background-image 0.1s;
+  will-change: background-image;
 }
 
 .tt1, .tt2, .tt3, .tt4, .tt5 {
-    background-size: auto 86%;
-    background-image: url('./image/ClickAfter.png');
-    transition: background-image 0.1s;
-    will-change: background-image;
+  background-size: auto 86%;
+  background-image: url("./image/ClickAfter.png");
+  transition: background-image 0.1s;
+  will-change: background-image;
 }
 
 /* カスタム画像のスタイル */
 .custom-click-before {
-    background-size: auto 100%;
-    transition: background-image 0.2s;
+  background-size: auto 100%;
+  transition: background-image 0.2s;
 }
 
 .custom-click-after {
-    background-size: auto 86%;
-    transition: background-image 0.2s;
+  background-size: auto 86%;
+  transition: background-image 0.2s;
 }
 
 /* 画像アップロード用の非表示入力 */
 .hidden-input {
-    display: none;
+  display: none;
 }
 
 /* アニメーション */
 @keyframes flash {
-    0% { opacity: 1; }
-    50% { opacity: 0; }
-    100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .flash {
-    animation: flash 0.2s 3;
+  animation: flash 0.2s 3;
 }
 
 .bad {
-    background-color: rgb(211, 91, 91);
-    animation: flash 0.2s 3;
+  background-color: rgb(211, 91, 91);
+  animation: flash 0.2s 3;
 }
 
 /* スコアレイヤー */
 #GameScoreLayer {
-    background-color: var(--score-bg-color);
-    font-size: 2em;
-    font-weight: bold;
-    color: var(--score-text-color);
-    text-align: center;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    letter-spacing: 0.02em;
+  background-color: var(--score-bg-color);
+  font-size: 2em;
+  font-weight: bold;
+  color: var(--score-text-color);
+  text-align: center;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.02em;
 }
 
 .blur {
-    backdrop-filter: blur(4px);
-    border-radius: 12px;
-    padding: 1.2em;
-    border: 2px solid var(--score-border-color);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(4px);
+  border-radius: 12px;
+  padding: 1.2em;
+  border: 2px solid var(--score-border-color);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-#GameScoreLayer .col-3, 
+#GameScoreLayer .col-3,
 #GameScoreLayer .col-2 {
-    max-width: 144px;
+  max-width: 144px;
 }
 
 .container {
-    max-width: 100%;
-    width: 100%;
-    padding: 2.4rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    align-items: center;
-    min-height: min-content;
+  max-width: 100%;
+  width: 100%;
+  padding: 2.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  min-height: min-content;
 }
 
 .ChromeLayer .container {
-    background-color: rgba(0, 0, 0, .64);
-    text-align: center;
-    font-weight: bold;
-    overflow: hidden;
-    color: var(--text-color);
-    padding: 1rem;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    z-index: 100;
-    max-height: calc(100vh - 125px) !important;
+  background-color: rgba(0, 0, 0, 0.64);
+  text-align: center;
+  font-weight: bold;
+  overflow: hidden;
+  color: var(--text-color);
+  padding: 1rem;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  z-index: 100;
+  max-height: calc(100vh - 125px) !important;
 }
 
 .ChromeLayer .game-title {
-    font-size: 2.6em;
-    color: #FEF002;
-    word-break: keep-all;
-    overflow-wrap: break-word;
-    padding: 0 1rem;
-    width: 100%;
-    box-sizing: border-box;
-    line-height: 1.2;
-    position: relative;
+  font-size: 2.6em;
+  color: #fef002;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  padding: 0 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  line-height: 1.2;
+  position: relative;
 }
 
 .ChromeLayer .input-group {
-    width: 100%;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
+  width: 100%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .welcome-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-size: 100% 100%;
-    opacity: .4;
-    overflow: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: 100% 100%;
+  opacity: 0.4;
+  overflow: hidden;
 }
 
 /* ボタングループ */
 #btn_group > div {
-    width: max-content;
-    min-width: calc(min(37.5%, 200px));
+  width: max-content;
+  min-width: calc(min(37.5%, 200px));
 }
 
 @media (max-width: 450px) {
-    #btn_group > div {
-        min-width: calc(min(37.5%, 110px));
-    }
+  #btn_group > div {
+    min-width: calc(min(37.5%, 110px));
+  }
 }
 
 @media (max-width: 600px) {
-    #btn_group > div {
-        min-width: calc(min(37.5%, 125px));
-    }
+  #btn_group > div {
+    min-width: calc(min(37.5%, 125px));
+  }
 }
 
 @media (max-width: 800px) {
-    #btn_group > div {
-        min-width: calc(min(37.5%, 150px));
-    }
+  #btn_group > div {
+    min-width: calc(min(37.5%, 150px));
+  }
 }
 
-
 @media (max-width: 1200px) {
-    #setting {
-        width: 80%;
-    }
+  #setting {
+    width: 80%;
+  }
 }
 
 .ChromeLayer {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
-    padding: 1em;
-    backdrop-filter: blur(.6em);
-    background-color: rgba(var(--text-color), .64);
-    border-bottom: 2px solid var(--score-border-color);
-    max-width: 600px;
-    z-index: 99;
-    margin: auto;
-    max-height: 100%;
-    overflow-y: auto;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  padding: 1em;
+  backdrop-filter: blur(0.6em);
+  background-color: rgba(var(--text-color), 0.64);
+  border-bottom: 2px solid var(--score-border-color);
+  max-width: 600px;
+  z-index: 99;
+  margin: auto;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.modeSelect {
+  display: flex;
+  width: 100%;
+  border-radius: 12px;
+  gap: 2px;
+  padding: 2px;
+  border: 2px solid var(--score-border-color);
+  background-color: var(--input-bg-color);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.modeSelect button {
+  width: 100%;
+  min-width: unset !important;
+}
+
+.modeSelect button:focus {
+  color: var(--input-text-color);
+  background-color: var(--input-bg-color);
+  border-color: var(--border-color) !important;
+  outline: none;
 }
 
 #bottom {
-    left: 0;
-    width: 100%;
-    text-align: center;
-    color: rgba(var(--text-color));
-    font-size: 1.2em;
-    overflow: hidden;
-    display: flex;
-    justify-content: space-between;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: rgba(var(--text-color));
+  font-size: 1.2em;
+  overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  min-height: fit-content;
 }
 
 .mode {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    padding: .3em .6em;
-    width: fit-content;
-    border-radius: 8px;
-    background-color: rgba(0, 0, 0, .15);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  padding: 0.3em 0.6em;
+  width: fit-content;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.15);
 }
 
 .scoreChrome {
-    display: flex;
-    gap: 1.2em;
-
+  display: flex;
+  gap: 1.2em;
 }
 
 .ScoreItem {
-    align-items: center;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    padding: .3em .6em;
-    width: fit-content;
-    gap: .3em;
-    border-radius:8px;
-    background-color: rgba(0, 0, 0, .15);
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  padding: 0.3em 0.6em;
+  width: fit-content;
+  gap: 0.3em;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.15);
 }
 
 /* その他 */
 .ControlLayer {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    justify-content: space-between;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: fit-content;
 }
 
 .btn {
-    border-radius: 8px;
-    border: 2px solid var(--border-color);
-    padding: 0.6em 1.2em;
-    font-size: 1em;
-    font-weight: 600;
-    font-family: inherit;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    cursor: pointer;
-    transition: all 0.25s ease;
-    min-width: 120px;
-    max-width: 200px;
-    box-sizing: border-box;
-    position: relative;
-    overflow: hidden;
+  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 600;
+  font-family: inherit;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  max-width: 200px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
 }
 
 .btn:hover {
-    background-color: var(--btn-hover-bg);
-    transform: translateY(-2px);
+  background-color: var(--btn-hover-bg);
 }
 
 .btn:active {
-    transform: translateY(0);
+  transform: translateY(0);
 }
 
 .btncol > .btn {
-    font-size: .6em;
+  font-size: 0.6em;
 }
 
 /* モード選択ボタンのスタイル */
 .btncol .btn[style*="background-color: #fff"],
 .btncol .btn[style*="color: #000"] {
-    background: var(--text-color) !important;
-    color: var(--bg-color) !important;
-    border-color: var(--text-color) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: var(--text-color) !important;
+  color: var(--bg-color) !important;
+  border-color: var(--text-color) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* ライトモード用のスタイル */
 @media (prefers-color-scheme: light) {
-    .btncol .btn {
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        border-color: var(--border-color);
-    }
+  .btncol .btn {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border-color: var(--border-color);
+  }
 
-    .btncol .btn[style*="background-color: #fff"],
-    .btncol .btn[style*="color: #000"] {
-        background: var(--btn-active-bg, #1a1a1a) !important;
-        color: #ffffff !important;
-        border-color: var(--btn-active-border, #1a1a1a) !important;
-        font-weight: 700;
-    }
+  .btncol .btn[style*="background-color: #fff"],
+  .btncol .btn[style*="color: #000"] {
+    background: var(--btn-active-bg, #1a1a1a) !important;
+    color: #ffffff !important;
+    border-color: var(--btn-active-border, #1a1a1a) !important;
+    font-weight: 700;
+  }
 
-    .btncol .btn:hover {
-        background-color: var(--btn-hover-light, #f5f5f5);
-        border-color: var(--text-color);
-    }
+  .btncol .btn:hover {
+    background-color: var(--btn-hover-light, #f5f5f5);
+    border-color: var(--text-color);
+  }
 }
 
 /* ダークモード用のスタイル */
 @media (prefers-color-scheme: dark) {
-    .btncol .btn {
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        border-color: var(--border-color);
-    }
+  .btncol .btn {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border-color: var(--border-color);
+  }
 
-    .btncol .btn[style*="background-color: #fff"],
-    .btncol .btn[style*="color: #000"] {
-        background: var(--btn-active-bg-dark, #ffffff) !important;
-        color: #000000 !important;
-        border-color: var(--btn-active-border-dark, #ffffff) !important;
-        font-weight: 700;
-    }
+  .btncol .btn[style*="background-color: #fff"],
+  .btncol .btn[style*="color: #000"] {
+    background: var(--btn-active-bg-dark, #ffffff) !important;
+    color: #000000 !important;
+    border-color: var(--btn-active-border-dark, #ffffff) !important;
+    font-weight: 700;
+  }
 
-    .btncol .btn:hover {
-        background-color: var(--btn-hover-dark, #3a3a3a);
-        border-color: var(--text-color);
-    }
+  .btncol .btn:hover {
+    background-color: var(--btn-hover-dark, #3a3a3a);
+    border-color: var(--text-color);
+  }
 }
 
 .btn_group {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2em;
 }
 
 .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.2em;
-    padding: 1.2em;
-    color: var(--text-color);
-    box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2em;
+  padding: 1.2em;
+  color: var(--text-color);
+  box-sizing: border-box;
 }
 
 #gameBody {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .input-group > .file {
-    border-radius: 0 !important;
+  border-radius: 0 !important;
 }
 
 * {
-    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-    user-select: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  user-select: none;
 }
 
 @media (max-width: 640px) {
-    #GameTimeLayer {
-        font-size: 8vw;
-        top: 2vh;
-    }
+  #GameTimeLayer {
+    font-size: 8vw;
+    top: 2vh;
+  }
 
-    #GameScoreLayer {
-        font-size: 5vw;
-    }
+  #GameScoreLayer {
+    font-size: 5vw;
+  }
 
-    #btn_group {
-        padding: 0 5vw;
-    }
+  #btn_group {
+    padding: 0 5vw;
+  }
 
-    #setting {
-        width: 90%;
-        padding: 0 5vw;
-    }
+  #setting {
+    width: 90%;
+    padding: 0 5vw;
+  }
 
-    .block {
-        background-size: 90% auto;
-    }
+  .block {
+    background-size: 90% auto;
+  }
 
-    .ChromeLayer {
-        box-sizing: border-box;
-    }
+  .ChromeLayer {
+    box-sizing: border-box;
+  }
 }
 
 @media (max-width: 480px) {
-    #GameTimeLayer {
-        font-size: 2.5em;
-    }
+  #GameTimeLayer {
+    font-size: 2.5em;
+  }
 
-    #GameScoreLayer {
-        font-size: 1.2em;
-    }
+  #GameScoreLayer {
+    font-size: 1.2em;
+  }
 }
 
 @media (max-width: 320px) {
-    #gameBody {
-        width: 300px;
-    }
+  #gameBody {
+    width: 300px;
+  }
 
-    #GameTimeLayer {
-        font-size: 2em;
-    }
+  #GameTimeLayer {
+    font-size: 2em;
+  }
 
-    #GameScoreLayer {
-        font-size: 1em;
-    }
+  #GameScoreLayer {
+    font-size: 1em;
+  }
 }
 
 @media (max-width: 768px) {
-    .container {
-        padding: 1rem 0.5rem;
-        gap: 0.8rem;
-    }
+  .container {
+    padding: 1rem 0.5rem;
+    gap: 0.8rem;
+  }
 
-    .ChromeLayer .game-title {
-        font-size: 2em;
-        margin: 0.5rem 0;
-        padding: 0 0.5rem;
-    }
+  .ChromeLayer .game-title {
+    font-size: 2em;
+    margin: 0.5rem 0;
+    padding: 0 0.5rem;
+  }
 
-    .ChromeLayer .input-group {
-        flex-direction: column;
-        margin: 0.5rem auto;
-        width: 95%;
-    }
+  .ChromeLayer .input-group {
+    flex-direction: column;
+    margin: 0.5rem auto;
+    width: 95%;
+  }
 
-    .ChromeLayer .input-group-prepend {
-        border-radius: 8px 8px 0 0 !important;
-        border-right: 2px solid var(--input-border-color) !important;
-        border-bottom: none !important;
-        width: 100%;
-        min-width: unset;
-        padding: 0.6em 0.8em !important;
-        font-size: 0.9em !important;
-    }
+  .ChromeLayer .input-group-prepend {
+    border-radius: 8px 8px 0 0 !important;
+    border-right: 2px solid var(--input-border-color) !important;
+    border-bottom: none !important;
+    width: 100%;
+    min-width: unset;
+    padding: 0.6em 0.8em !important;
+    font-size: 0.9em !important;
+  }
 
-    .ChromeLayer .form-control {
-        border-radius: 0 0 8px 8px !important;
-        border-top: none !important;
-        text-align: center;
-        padding: 0.6em 0.8em !important;
-        font-size: 0.9em !important;
-    }
+  .ChromeLayer .form-control {
+    border-radius: 0 0 8px 8px !important;
+    border-top: none !important;
+    text-align: center;
+    padding: 0.6em 0.8em !important;
+    font-size: 0.9em !important;
+  }
 
-    .ChromeLayer .input-group button {
-        border-radius: 8px !important;
-        border-left: 2px solid var(--input-border-color) !important;
-        border-top: 2px solid var(--input-border-color) !important;
-        width: 100%;
-        padding: 0.6em 0.8em !important;
-        font-size: 0.9em !important;
-        margin-top: 0.5em;
-    }
+  .ChromeLayer .input-group button {
+    border-radius: 8px !important;
+    border-left: 2px solid var(--input-border-color) !important;
+    border-top: 2px solid var(--input-border-color) !important;
+    width: 100%;
+    padding: 0.6em 0.8em !important;
+    font-size: 0.9em !important;
+    margin-top: 0.5em;
+  }
 
-    .ChromeLayer .btncol {
-        flex-direction: column;
-        align-items: center;
-        gap: 0.8em;
-        padding: 0 1em;
-        margin: 0.8em auto;
-    }
+  .ChromeLayer .btncol {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8em;
+    padding: 0 1em;
+    margin: 0.8em auto;
+  }
 
-    .ChromeLayer .btn {
-        width: 100%;
-        max-width: 300px;
-        font-size: 0.9em;
-        padding: 0.5em 1em;
-    }
+  .ChromeLayer .btn {
+    width: 100%;
+    max-width: 300px;
+    font-size: 0.9em;
+    padding: 0.5em 1em;
+  }
 
-    .input-group.file {
-        margin-bottom: 0.8em;
-    }
+  .input-group.file {
+    margin-bottom: 0.8em;
+  }
 
-    .column {
-        flex-direction: column;
-    }
+  .column {
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 480px) {
-    .container {
-        padding: 0.5rem 0.3rem;
-        gap: 0.5rem;
-    }
+  .container {
+    padding: 0.5rem 0.3rem;
+    gap: 0.5rem;
+  }
 
-    .ChromeLayer .game-title {
-        font-size: 1.4em;
-        margin: 0.3rem 0;
-        padding: 0 0.3rem;
-        line-height: 1.1;
-    }
+  .ChromeLayer .game-title {
+    font-size: 1.4em;
+    margin: 0.3rem 0;
+    padding: 0 0.3rem;
+    line-height: 1.1;
+  }
 
-    .ChromeLayer .input-group {
-        width: 98%;
-        margin: 0.3rem auto;
-    }
+  .ChromeLayer .input-group {
+    width: 98%;
+    margin: 0.3rem auto;
+  }
 
-    .ChromeLayer .btncol {
-        gap: 0.5em;
-        padding: 0 0.5em;
-        margin: 0.5em auto;
-        width: 95%;
-    }
+  .ChromeLayer .btncol {
+    gap: 0.5em;
+    padding: 0 0.5em;
+    margin: 0.5em auto;
+    width: 95%;
+  }
 
-    .input-group.file {
-        margin-bottom: 0.4em;
-    }
+  .input-group.file {
+    margin-bottom: 0.4em;
+  }
 
-    .ChromeLayer .input-group-prepend {
-        padding: 0.4em 0.6em !important;
-        font-size: 0.85em !important;
-    }
+  .ChromeLayer .input-group-prepend {
+    padding: 0.4em 0.6em !important;
+    font-size: 0.85em !important;
+  }
 
-    .ChromeLayer .form-control {
-        padding: 0.4em 0.6em !important;
-        font-size: 0.85em !important;
-    }
+  .ChromeLayer .form-control {
+    padding: 0.4em 0.6em !important;
+    font-size: 0.85em !important;
+  }
 
-    .ChromeLayer .input-group button {
-        padding: 0.4em 0.6em !important;
-        font-size: 0.85em !important;
-    }
+  .ChromeLayer .input-group button {
+    padding: 0.4em 0.6em !important;
+    font-size: 0.85em !important;
+  }
 
-    .ChromeLayer .btn {
-        width: 100%;
-        max-width: 250px;
-    }
+  .ChromeLayer .btn {
+    width: 100%;
+    max-width: 250px;
+  }
 }
 
 @media (max-height: 600px) {
-    .container {
-        padding-top: 0.3rem;
-    }
+  .container {
+    padding-top: 0.3rem;
+  }
 
-    .ChromeLayer .game-title {
-        font-size: 1.2em;
-        margin: 0.2rem 0;
-    }
+  .ChromeLayer .game-title {
+    font-size: 1.2em;
+    margin: 0.2rem 0;
+  }
 
-    .ChromeLayer .input-group {
-        margin-top: 0.2rem;
-    }
+  .ChromeLayer .input-group {
+    margin-top: 0.2rem;
+  }
 }
 
 :root {
-    --bg-color: #ffffff;
-    --border-color: #8fb8c9;
-    --text-shadow-color: #000;
-    --score-bg-color: rgba(255, 255, 255, 0.64);
-    --score-text-color: #1a1a1a;
-    --score-border-color: rgba(143, 184, 201, 0.5);
-    --blur-bg-color: rgba(255, 255, 255, 0.72);
-    --text-color: #1a1a1a;
-    --input-bg-color: #ffffff;
-    --input-border-color: #8fb8c9;
-    --input-text-color: #1a1a1a;
-    --btn-hover-bg: #f0f0f0;
-    --btn-active-bg: #1a1a1a;
-    --btn-active-border: #1a1a1a;
-    --btn-hover-light: #f5f5f5;
-    --btn-active-bg-dark: #ffffff;
-    --btn-active-border-dark: #ffffff;
-    --btn-hover-dark: #3a3a3a;
+  --bg-color: #ffffff;
+  --border-color: #8fb8c9;
+  --text-shadow-color: #000;
+  --score-bg-color: rgba(255, 255, 255, 0.64);
+  --score-text-color: #1a1a1a;
+  --score-border-color: rgba(143, 184, 201, 0.5);
+  --blur-bg-color: rgba(255, 255, 255, 0.72);
+  --text-color: #1a1a1a;
+  --input-bg-color: #ffffff;
+  --input-border-color: #8fb8c9;
+  --input-text-color: #1a1a1a;
+  --btn-hover-bg: #f0f0f0;
+  --btn-active-bg: #1a1a1a;
+  --btn-active-border: #1a1a1a;
+  --btn-hover-light: #f5f5f5;
+  --btn-active-bg-dark: #ffffff;
+  --btn-active-border-dark: #ffffff;
+  --btn-hover-dark: #3a3a3a;
 }
 
 @media (prefers-color-scheme: dark) {
-    :root {
-        --bg-color: #2c2c2c;
-        --border-color: #4a4a4a;
-        --text-shadow-color: #000;
-        --score-bg-color: rgba(0, 0, 0, 0.64);
-        --score-text-color: #ffffff;
-        --score-border-color: rgba(255, 255, 255, 0.2);
-        --blur-bg-color: rgba(44, 44, 44, 0.72);
-        --text-color: #e0e0e0;
-        --input-bg-color: #3a3a3a;
-        --input-border-color: #555555;
-        --input-text-color: #e0e0e0;
-        --btn-hover-bg: #3a3a3a;
-        --btn-active-bg: #ffffff;
-        --btn-active-border: #ffffff;
-        --btn-hover-light: #f5f5f5;
-        --btn-active-bg-dark: #000000;
-        --btn-active-border-dark: #000000;
-        --btn-hover-dark: #3a3a3a;
-    }
+  :root {
+    --bg-color: #2c2c2c;
+    --border-color: #4a4a4a;
+    --text-shadow-color: #000;
+    --score-bg-color: rgba(0, 0, 0, 0.64);
+    --score-text-color: #ffffff;
+    --score-border-color: rgba(255, 255, 255, 0.2);
+    --blur-bg-color: rgba(44, 44, 44, 0.72);
+    --text-color: #e0e0e0;
+    --input-bg-color: #3a3a3a;
+    --input-border-color: #555555;
+    --input-text-color: #e0e0e0;
+    --btn-hover-bg: #3a3a3a;
+    --btn-active-bg: #ffffff;
+    --btn-active-border: #ffffff;
+    --btn-hover-light: #f5f5f5;
+    --btn-active-bg-dark: #000000;
+    --btn-active-border-dark: #000000;
+    --btn-hover-dark: #3a3a3a;
+  }
 }
 
-
 .form-control {
-    color: var(--input-text-color) !important;
-    background-color: var(--input-bg-color) !important;
-    border: 2px solid var(--input-border-color) !important;
-    font-weight: 500 !important;
-    border-radius: 0 12px 12px 0 !important;
-    padding: 0.8em 1.2em !important;
-    transition: all 0.3s ease;
-    font-size: 1em !important;
-    flex: 1;
-    width: 100%;
-    box-sizing: border-box;
-    min-width: 0;
+  color: var(--input-text-color) !important;
+  background-color: var(--input-bg-color) !important;
+  border: 2px solid var(--input-border-color) !important;
+  font-weight: 500 !important;
+  border-radius: 0 12px 12px 0 !important;
+  padding: 0.8em 1.2em !important;
+  transition: all 0.3s ease;
+  font-size: 1em !important;
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .input-group {
-    position: relative;
-    display: flex;
-    gap: 0;
-    width: 100%;
-    box-sizing: border-box;
+  position: relative;
+  display: flex;
+  gap: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .input-group > * {
-    box-sizing: border-box;
-    min-width: 0;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .input-group-prepend {
-    color: var(--input-text-color) !important;
-    background-color: var(--input-bg-color) !important;
-    border: 2px solid var(--input-border-color) !important;
-    border-right: none !important;
-    font-weight: 500 !important;
-    border-radius: 12px 0 0 12px !important;
-    padding: 0.8em 1.2em !important;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    min-width: 120px;
-    justify-content: center;
+  color: var(--input-text-color) !important;
+  background-color: var(--input-bg-color) !important;
+  border: 2px solid var(--input-border-color) !important;
+  border-right: none !important;
+  font-weight: 500 !important;
+  border-radius: 12px 0 0 12px !important;
+  padding: 0.8em 1.2em !important;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  min-width: 120px;
+  justify-content: center;
 }
 
 .input-group button {
-    color: var(--input-text-color) !important;
-    background-color: var(--input-bg-color) !important;
-    border: 2px solid var(--input-border-color) !important;
-    border-left: none !important;
-    font-weight: 500 !important;
-    border-radius: 0 12px 12px 0 !important;
-    padding: 0.8em 1.2em !important;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 80px;
+  color: var(--input-text-color) !important;
+  background-color: var(--input-bg-color) !important;
+  border: 2px solid var(--input-border-color) !important;
+  border-left: none !important;
+  font-weight: 500 !important;
+  border-radius: 0 12px 12px 0 !important;
+  padding: 0.8em 1.2em !important;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
 }
 
 .input-group button:hover {
-    background-color: var(--btn-hover-bg) !important;
-    border-color: var(--border-color) !important;
+  background-color: var(--btn-hover-bg) !important;
+  border-color: var(--border-color) !important;
 }
 
 .input-group button:active {
-    transform: translateY(1px);
+  transform: translateY(1px);
 }
 
 .form-control:hover,
 .input-group:hover .input-group-prepend,
 .input-group:hover button {
-    border-color: var(--border-color) !important;
+  border-color: var(--border-color) !important;
 }
 
 .form-control:focus {
-    color: var(--input-text-color);
-    background-color: var(--input-bg-color);
-    border-color: var(--border-color) !important;
-    box-shadow: 0 0 0 4px rgba(143, 184, 201, 0.15);
-    outline: none;
+  color: var(--input-text-color);
+  background-color: var(--input-bg-color);
+  border-color: var(--border-color) !important;
+  box-shadow: 0 0 0 4px rgba(143, 184, 201, 0.15);
+  outline: none;
 }
 
 .input-group:focus-within .input-group-prepend,
 .input-group:focus-within button {
-    border-color: var(--border-color) !important;
+  border-color: var(--border-color) !important;
 }
 
 /* プレースホルダーのスタイル */
 .form-control::placeholder {
-    color: rgba(var(--input-text-color), 0.6);
-    opacity: 0.6;
+  color: rgba(var(--input-text-color), 0.6);
+  opacity: 0.6;
 }
 
 /* Webkit（Chrome、Safari）のオートフィル背景色を制御 */
 .form-control:-webkit-autofill,
 .form-control:-webkit-autofill:hover,
 .form-control:-webkit-autofill:focus {
-    -webkit-box-shadow: 0 0 0 30px var(--input-bg-color) inset !important;
-    -webkit-text-fill-color: var(--input-text-color) !important;
-    transition: background-color 5000s ease-in-out 0s;
+  -webkit-box-shadow: 0 0 0 30px var(--input-bg-color) inset !important;
+  -webkit-text-fill-color: var(--input-text-color) !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 /* 数値入力のスピンボタンを非表示 */
 .form-control::-webkit-outer-spin-button,
 .form-control::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+  -webkit-appearance: none;
+  margin: 0;
 }
 
-.form-control[type=number] {
-    appearance: textfield;
+.form-control[type="number"] {
+  appearance: textfield;
 }
 
 @media (max-width: 768px) {
-    .input-group {
-        flex-direction: column;
-        margin: 0.5rem auto;
-        width: 95%;
-        align-items: center;
-    }
+  .input-group {
+    flex-direction: column;
+    margin: 0.5rem auto;
+    width: 95%;
+    align-items: center;
+  }
 
-    .form-control {
-        width: 100%;
-        padding: 0.6em 0.8em !important;
-        font-size: 0.9em !important;
-        border-radius: 0 0 8px 8px !important;
-        border-top: none !important;
-    }
+  .form-control {
+    width: 100%;
+    padding: 0.6em 0.8em !important;
+    font-size: 0.9em !important;
+    border-radius: 0 0 8px 8px !important;
+    border-top: none !important;
+  }
 
-    .input-group.file .form-control {
-        font-size: 0.8em !important;
-        padding: 0.5em !important;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+  .input-group.file .form-control {
+    font-size: 0.8em !important;
+    padding: 0.5em !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 @media (max-width: 480px) {
-    .input-group {
-        width: 98%;
-        margin: 0.3rem auto;
-    }
+  .input-group {
+    width: 98%;
+    margin: 0.3rem auto;
+  }
 
-    .form-control {
-        padding: 0.4em 0.6em !important;
-        font-size: 0.85em !important;
-    }
+  .form-control {
+    padding: 0.4em 0.6em !important;
+    font-size: 0.85em !important;
+  }
 
-    .input-group.file .form-control {
-        font-size: 0.75em !important;
-        padding: 0.4em !important;
-    }
+  .input-group.file .form-control {
+    font-size: 0.75em !important;
+    padding: 0.4em !important;
+  }
 }
-
