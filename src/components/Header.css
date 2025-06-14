@@ -1,0 +1,31 @@
+.Header {
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: rgba(var(--text-color));
+  font-size: 1.2em;
+  overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  min-height: fit-content;
+}
+
+.Score {
+  display: flex;
+  gap: 1.2em;
+}
+
+.ScoreItem {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  width: fit-content;
+  gap: 0.3em;
+}
+
+@media (max-width: 640px) {
+  .Header {
+    font-size: small;
+  }
+}
