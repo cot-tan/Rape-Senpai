@@ -20,7 +20,7 @@ export const Settings = ({
   handleClickAfterImage,
   resetClickAfterImage,
   setClickAfterStyle,
-  setClickBeforeStyle
+  setClickBeforeStyle,
 }: {
   mode: GameMode;
   changeMode: (newMode: GameMode) => void;
@@ -40,18 +40,15 @@ export const Settings = ({
   resetClickAfterImage: () => void;
   setColumn: React.Dispatch<React.SetStateAction<number>>;
   setGameSettingNum: React.Dispatch<React.SetStateAction<number>>;
-  setClickAfterStyle: React.Dispatch<React.SetStateAction<string>>
-  setClickBeforeStyle: React.Dispatch<React.SetStateAction<string>>
+  setClickAfterStyle: React.Dispatch<React.SetStateAction<string>>;
+  setClickBeforeStyle: React.Dispatch<React.SetStateAction<string>>;
 }) => {
   const [ActiveMenu, setActiveMenu] = useState<
-    "General" | "Appearance" | "Advanced" | null
+    "General" | "Appearance" | "Advanced" | "About" | null
   >("General");
 
   return (
     <div className="container">
-      <h1 className="Title">
-        {I18N["game-title"]}
-      </h1>
       <div className="card">
         <button
           type="button"
@@ -141,13 +138,11 @@ export const Settings = ({
                   <button
                     type="button"
                     onClick={() => {
-                      setClickBeforeStyle("")
-                    }
-                    }
+                      setClickBeforeStyle("");
+                    }}
                   >
                     削除
                   </button>
-                  
                 </div>
               </div>
               <div className="input-group file">
@@ -171,13 +166,11 @@ export const Settings = ({
                   <button
                     type="button"
                     onClick={() => {
-                      setClickAfterStyle("")
-                    }
-                    }
+                      setClickAfterStyle("");
+                    }}
                   >
                     削除
                   </button>
-                  
                 </div>
               </div>
               <div className="input-group file">
@@ -259,7 +252,7 @@ export const Settings = ({
                   type="text"
                   id="keyboard"
                   className="form-control"
-                  maxLength={4}
+                  maxLength={columns}
                   placeholder={I18N["default-dfjk"]}
                 />
               </div>
@@ -309,7 +302,65 @@ export const Settings = ({
           )
           : <></>}
       </div>
+      <div className="card">
+        <button
+          type="button"
+          onClick={() =>
+            setActiveMenu((prev) => prev === "About" ? null : "About")}
+          className="prepend"
+        >
+          <div>About</div>
+        </button>
+        {ActiveMenu === "About"
+          ? (
+            <div className="cardItem">
+              <div className="input-group">
+                <h1 className="Title">
+                  {I18N["game-title"]}
+                </h1>
+                <div>
+                  {I18N["game-intro1"]}
+                </div>
+                <div>
+                  {I18N["game-intro2"]}
+                </div>
+                <div>
+                  {I18N["hint-keyboard-support"]}
+                </div>
+                <div>
+                  {I18N["hint-pointer-support"]}
+                </div>
+              </div>
+              <div className="Tab">
+                <a
+                  href="https://arcxingye.github.io/EatKano/index.html"
+                  style={{ "width": "100%" }}
+                >
+                  <button className="prepend" type="button">
+                    EatKano
+                  </button>
+                </a>
+                <a
+                  href="https://rape.konnokai.me/index.html"
+                  style={{ "width": "100%" }}
+                >
+                  <button className="prepend" type="button">
+                    雷普先輩
+                  </button>
+                </a>
+                <a
+                  href="https://github.com/cot-tan/Rape-Senpai/tree/dev"
+                  style={{ "width": "100%" }}
+                >
+                  <button className="prepend" type="button">
+                    {I18N["repo"]}
+                  </button>
+                </a>
+              </div>
+            </div>
+          )
+          : <></>}
+      </div>
     </div>
   );
 };
-

@@ -52,6 +52,16 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+.ScoreLayer {
+  position: absolute;
+  padding: 12px;
+  border-radius: 12px;
+  background-color: var(--setting-bg-color);
+  backdrop-filter: blur(12px);
+  box-sizing: border-box;
+  box-shadow: 0 0 4px 0.1 var(--border-color);
+}
+
 /* ブロック */
 .block {
   position: absolute;

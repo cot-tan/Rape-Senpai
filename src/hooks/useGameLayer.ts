@@ -664,8 +664,8 @@ export const useGameLayer = ({
   }, [isGameStart]);
 
   useEffect(() => {
-    console.log(gameBBList)
-  }, [gameBBList])
+    console.log(gameBBList);
+  }, [gameBBList]);
 
   return {
     tapRate,

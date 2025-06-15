@@ -167,13 +167,6 @@ function App() {
             {settings.I18N["again"]}
           </button>
         </div>
-        {isShown
-          ? (
-            <div className="container">
-              <div id="GameScoreLayer-text">{shareText(tapRate)}</div>
-            </div>
-          )
-          : <></>}
         {welcomeLayerClosed ? <></> : (
           <Settings
             mode={settings.mode}
@@ -196,6 +189,15 @@ function App() {
           />
         )}
       </div>
+      {isShown
+        ? (
+          <div className="ScoreLayer">
+            <div className="container">
+              <div id="GameScoreLayer-text">{shareText(tapRate)}</div>
+            </div>
+          </div>
+        )
+        : <></>}
     </div>
   );
 }

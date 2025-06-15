@@ -80,17 +80,19 @@ export interface BlockElementProps {
   onTap: (id: string) => void;
 }
 
-export const BlockElement: React.FC<BlockElementProps> = ({ id, left, bottom, size, isTarget, onTap }) => (
+export const BlockElement: React.FC<BlockElementProps> = (
+  { id, left, bottom, size, isTarget, onTap },
+) => (
   <div
     id={id}
-    className={`block${isTarget ? ' target' : ''}`}
+    className={`block${isTarget ? " target" : ""}`}
     style={{
-      position: 'absolute',
+      position: "absolute",
       width: `${size}px`,
       height: `${size}px`,
       left: `${left}px`,
       bottom: `${bottom}px`,
-      transition: 'all 100ms ease-in-out',
+      transition: "all 100ms ease-in-out",
     }}
     onClick={() => onTap(id)}
   />
