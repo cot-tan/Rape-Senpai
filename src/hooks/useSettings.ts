@@ -14,6 +14,27 @@ import {
 import clickBeforeImage from "../image/ClickBefore.png";
 import clickAfterImage from "../image/AfterClicking.png";
 
+export type Settings = {
+    mode: GameMode,
+    clickAfterStyle: string,
+    clickBeforeStyle: string,
+    changeMode: (newMode: GameMode) => void,
+    I18N: { [key:string]: string },
+    map: { [key: string]: number },
+    gameSettingNum: number,
+    columns: number,
+    changeSoundMode: () => void,
+    handleClickAfterImage: (event: React.ChangeEvent<HTMLInputElement>) => void,
+    resetClickBeforeImage: () => void,
+    resetClickAfterImage: () => void,
+    handleSoundUpload: (event: React.ChangeEvent<HTMLInputElement>, soundType: SoundType) => void,
+    handleClickBeforeImage: (event: React.ChangeEvent<HTMLInputElement>) => void,
+    resetSound: (soundType: SoundType) => void,
+    setGameSettingNum: React.Dispatch<React.SetStateAction<number>>,
+    setColumns: React.Dispatch<React.SetStateAction<number>>,
+}
+
+
 const useSettings = (
   { soundMode, toggleSoundMode, updateSound }: {
     soundMode: "on" | "off";
@@ -282,6 +303,8 @@ const useSettings = (
     resetSound,
     setGameSettingNum,
     setColumns,
+    setClickBeforeStyle,
+    setClickAfterStyle
   };
 };
 

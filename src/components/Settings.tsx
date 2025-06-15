@@ -19,6 +19,8 @@ export const Settings = ({
   resetClickBeforeImage,
   handleClickAfterImage,
   resetClickAfterImage,
+  setClickAfterStyle,
+  setClickBeforeStyle
 }: {
   mode: GameMode;
   changeMode: (newMode: GameMode) => void;
@@ -38,6 +40,8 @@ export const Settings = ({
   resetClickAfterImage: () => void;
   setColumn: React.Dispatch<React.SetStateAction<number>>;
   setGameSettingNum: React.Dispatch<React.SetStateAction<number>>;
+  setClickAfterStyle: React.Dispatch<React.SetStateAction<string>>
+  setClickBeforeStyle: React.Dispatch<React.SetStateAction<string>>
 }) => {
   const [ActiveMenu, setActiveMenu] = useState<
     "General" | "Appearance" | "Advanced" | null
@@ -127,12 +131,24 @@ export const Settings = ({
                   accept="image/*"
                   onChange={handleClickBeforeImage}
                 />
-                <button
-                  type="button"
-                  onClick={resetClickBeforeImage}
-                >
-                  リセット
-                </button>
+                <div className="Tab">
+                  <button
+                    type="button"
+                    onClick={resetClickBeforeImage}
+                  >
+                    リセット
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setClickBeforeStyle("")
+                    }
+                    }
+                  >
+                    削除
+                  </button>
+                  
+                </div>
               </div>
               <div className="input-group file">
                 <div className="prepend">
@@ -145,12 +161,24 @@ export const Settings = ({
                   accept="image/*"
                   onChange={handleClickAfterImage}
                 />
-                <button
-                  type="button"
-                  onClick={resetClickAfterImage}
-                >
-                  リセット
-                </button>
+                <div className="Tab">
+                  <button
+                    type="button"
+                    onClick={resetClickAfterImage}
+                  >
+                    リセット
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setClickAfterStyle("")
+                    }
+                    }
+                  >
+                    削除
+                  </button>
+                  
+                </div>
               </div>
               <div className="input-group file">
                 <div className="prepend col-2">
@@ -284,3 +312,4 @@ export const Settings = ({
     </div>
   );
 };
+
