@@ -1,10 +1,6 @@
-<p align="center">
-  <a href="https://homo.momochi.dev/"><img src="https://github.com/cot-tan/Rape-Senpai/blob/main/static/image/ClickBefore.png?raw=true" width="100" height="100" alt="EatKano"></a>
-</p>
-
 <div align="center">
 
-# Rape Senpai (EatKano)
+# TapTile
 
 このプロジェクトは、雷普先輩（EatKano）を一部生成AIを用いてReact化した実験的なものです。レンダリングの不整合や状態管理の不具合が発生し、動作は非常に不安定です。
 
