@@ -73,6 +73,11 @@ const Header = (
   };
 
   useEffect(() => {
+    const bestScores = getBestScore(score, tapRate);
+    console.log(scoreToString(bestScores.score));
+  }, [gameScore])
+
+  useEffect(() => {
     // ベストスコアの更新を監視
     const cookieName = settings.mode === "NORMAL"
       ? "best-score"
@@ -119,14 +124,7 @@ const Header = (
 
         <div className="ScoreItem">
           <div>{settings.I18N["best"]}</div>
-          <div>
-            {(() => {
-              const bestScores = getBestScore(score, tapRate);
-              return settings.mode === "ENDLESS"
-                ? bestScores.tapRate.toFixed(2)
-                : scoreToString(bestScores.score);
-            })()}
-          </div>
+          <div>{bestScore}</div>
         </div>
       </div>
     </div>

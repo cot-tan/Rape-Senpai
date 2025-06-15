@@ -108,7 +108,6 @@ function App() {
       return () => document.removeEventListener("keydown", handleKeydown);
     }
   }, [
-    settings.map,
     welcomeLayerClosed,
     gameBBList,
     gameBBListIndex,
