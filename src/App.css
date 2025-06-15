@@ -191,7 +191,7 @@ button {
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
-
+  line-height: 17px;
   box-shadow: 0 0 2px 0.4px var(--border-color);
 }
 
