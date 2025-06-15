@@ -72,7 +72,6 @@ const Clicker = () => {
   });
 
   const el = sorted[0];
-  console.log(el);
   const rect = el.getBoundingClientRect();
   const event = new MouseEvent("mousedown", {
     bubbles: true,

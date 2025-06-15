@@ -73,9 +73,8 @@ const Header = (
   };
 
   useEffect(() => {
-    const bestScores = getBestScore(score, tapRate);
-    console.log(scoreToString(bestScores.score));
-  }, [gameScore])
+    getBestScore(score, tapRate);
+  }, [score, tapRate])
 
   useEffect(() => {
     // ベストスコアの更新を監視

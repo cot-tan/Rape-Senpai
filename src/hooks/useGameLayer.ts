@@ -480,10 +480,6 @@ export const useGameLayer = ({
     if (!isClickable || !activeRef.current) return false;
     const currentTime = Date.now();
     const timeSinceLastTap = currentTime - lastTapTime;
-    console.log("[handleGameTap]: ", {
-      activeRef,
-      isClickable,
-    });
 
     // 前回のタップからの時間が短すぎる場合は無視
     if (timeSinceLastTap < TAP_THRESHOLD) {
@@ -662,10 +658,6 @@ export const useGameLayer = ({
     if (!isGameStart) return;
     setClickable(true);
   }, [isGameStart]);
-
-  useEffect(() => {
-    console.log(gameBBList);
-  }, [gameBBList]);
 
   return {
     tapRate,
